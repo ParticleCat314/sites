@@ -1,0 +1,19 @@
+{
+  "name": "Scale Compendium",
+  "short_name": "Scales",
+  "description": "Every known scale type on the tonic of your choice: notation, degree formula, interval pattern, keyboard map and piano playback.",
+  "id": "./",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#faf7f0",
+  "theme_color": "#faf7f0",
+  "categories": ["music", "education", "reference"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

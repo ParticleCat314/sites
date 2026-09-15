@@ -1,0 +1,26 @@
+{
+  "name": "scalelist",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc && esbuild src/main.ts --bundle --minify --outfile=dist/app.js --format=iife",
+    "watch": "esbuild src/main.ts --bundle --outfile=dist/app.js --format=iife --watch",
+    "typecheck": "tsc",
+    "build:offline": "npm run build && node scripts/build-offline.mjs",
+    "build:offline:piano": "npm run build && node --max-old-space-size=4096 scripts/build-offline.mjs --with-piano",
+    "serve:lan": "npx http-server offline -S -C ../../.certs/lan.pem -K ../../.certs/lan-key.pem -p 8443 -c-1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "typescript": "^7.0.2"
+  },
+  "dependencies": {
+    "smplr": "^1.0.0",
+    "vexflow": "^5.0.0"
+  }
+}

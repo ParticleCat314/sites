@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Scale Compendium</title>
+<meta name="description" content="Every known scale type on the tonic of your choice: notation, degree formula, interval pattern, keyboard map and piano playback.">
+<meta name="theme-color" content="#faf7f0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Scales">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preload" href="fonts/SourceSans3-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header>
+  <h1>Scale Compendium <span class="tonic">· Tonic <span id="tonicName">C</span></span></h1>
+  <p class="sub">Each known scale type, built on the tonic of your choice. Notation, degree
+  formula, interval pattern in semitones, keyboard map, and piano playback. Use the search
+  field to filter by name.</p>
+</header>
+
+<div class="toolbar" id="toolbar">
+  <input id="search" type="search" placeholder="Filter scales… (e.g. lydian, bebop)" aria-label="Filter scales">
+  <div class="rootpick">
+    <span class="lbl" id="rootlbl">Root</span>
+    <div class="roots" role="group" aria-labelledby="rootlbl" id="roots"></div>
+  </div>
+  <div class="themepick" id="themepick"></div>
+</div>
+<nav class="chiprow" id="chiprow" aria-label="Categories"></nav>
+
+<main id="main"></main>
+<p id="noresult">No scale matches this filter.</p>
+
+<footer>
+  Notation rendered with sheetmusiccard (VexFlow 5). Playback uses a sampled
+  grand piano; the sounding note is highlighted as the scale plays. On each
+  keyboard map the solid key is the root and the tinted
+  keys are scale members. Aliases give common alternative names.
+  <div id="offline"></div>
+</footer>
+
+<script src="dist/app.js"></script>
+</body>
+</html>

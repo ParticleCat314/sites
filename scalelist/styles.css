@@ -1,0 +1,526 @@
+/* ---------- themes ---------- */
+/* Each theme sets the same set of variables; components only read variables.
+   Notation is drawn by sheetmusiccard in the theme's ink colors, so the stave
+   background follows the theme too (dark themes get a dark stave). */
+
+/* Category accents: one harmonized ramp per surface family. Light themes get
+   deep, slightly muted hues (readable with paper-colored text on top); dark
+   themes override with lifted pastels of the same hues. Consumers read
+   --cat1..--cat11 through --acc. */
+:root {
+  --cat1: #4c5ac2;  /* indigo */
+  --cat2: #1e7f68;  /* viridian */
+  --cat3: #7a4fc9;  /* amethyst */
+  --cat4: #b05416;  /* sienna */
+  --cat5: #9a3d8f;  /* orchid */
+  --cat6: #17708a;  /* petrol */
+  --cat7: #b53a62;  /* raspberry */
+  --cat8: #5a7822;  /* moss */
+  --cat9: #c04036;  /* vermilion */
+  --cat10: #2f6cb0; /* cerulean */
+  --cat11: #8a6a1c; /* bronze */
+}
+
+/* Vivid light themes sit accents on saturated paper, so they need an
+   extra-deep ramp to keep paper-colored button text readable. */
+:root[data-theme="brass"],
+:root[data-theme="riviera"] {
+  --cat1: #37439c;
+  --cat2: #105647;
+  --cat3: #5c37a0;
+  --cat4: #7f390c;
+  --cat5: #7a2a71;
+  --cat6: #0e5468;
+  --cat7: #8f2647;
+  --cat8: #42590f;
+  --cat9: #8f2820;
+  --cat10: #1f4f87;
+  --cat11: #614708;
+}
+
+/* Scriabin's synesthetic pitch-class colors (clavier à lumières, tuned for a
+   dark hall). Indexed by pitch class, C = 0. Used by the Scriabin theme to
+   color noteheads and keyboard keys by pitch. */
+:root {
+  --pc0: #ff4438;   /* C — red */
+  --pc1: #7d4dff;   /* C#/Db — violet */
+  --pc2: #ffd43b;   /* D — yellow */
+  --pc3: #9aa5b1;   /* Eb — steely gray */
+  --pc4: #58c4ff;   /* E — pearly sky blue */
+  --pc5: #d63a3a;   /* F — deep red */
+  --pc6: #2f6bff;   /* F# — bright intense blue */
+  --pc7: #ff8c1a;   /* G — orange-rose */
+  --pc8: #b44de0;   /* Ab — purple-violet */
+  --pc9: #37c837;   /* A — green */
+  --pc10: #b79aa4;  /* Bb — rose-steel */
+  --pc11: #86a8ff;  /* B — pearly blue */
+}
+
+:root[data-theme="midnight"],
+:root[data-theme="nocturne"],
+:root[data-theme="rosewood"],
+:root[data-theme="synthwave"],
+:root[data-theme="scriabin"] {
+  --cat1: #93a0f0;
+  --cat2: #63c9a8;
+  --cat3: #b394ee;
+  --cat4: #eba06a;
+  --cat5: #d98ccd;
+  --cat6: #6fc3d8;
+  --cat7: #ef92ab;
+  --cat8: #a8c46f;
+  --cat9: #ef9184;
+  --cat10: #7fb3e8;
+  --cat11: #d6b45e;
+}
+
+/* Ivory writing paper, warm ink, fountain-pen blue. */
+:root,
+:root[data-theme="paper"] {
+  --paper: #faf7f0;
+  --surface: #fffdf8;
+  --ink: #2a2721;
+  --ink-dim: #736e61;
+  --line: #e7e1d3;
+  --line-soft: #f0ebdf;
+  --focus: #3f5bd6;
+  --key-white: #fefcf6;
+  --key-black: #2e2b25;
+  --stave-bg: #fffdf8;
+}
+
+/* Cool daylight: slate ink on ice blue. */
+:root[data-theme="glacier"] {
+  --paper: #eef3f6;
+  --surface: #f9fbfd;
+  --ink: #1f2a33;
+  --ink-dim: #5d7180;
+  --line: #d5e0e8;
+  --line-soft: #e3ecf1;
+  --focus: #0d7095;
+  --key-white: #fbfdfe;
+  --key-black: #24313b;
+  --stave-bg: #fdfeff;
+}
+
+/* Aged hymnal: parchment and oxidized brown ink. */
+:root[data-theme="sepia"] {
+  --paper: #f4ead6;
+  --surface: #fbf3e3;
+  --ink: #423527;
+  --ink-dim: #75654d;
+  --line: #e0d2b4;
+  --line-soft: #ebdfc7;
+  --focus: #a3591a;
+  --key-white: #fdf7ea;
+  --key-black: #4a3d2c;
+  --stave-bg: #fdf8ec;
+}
+
+/* Conservatory garden: sage paper, pine ink. */
+:root[data-theme="forest"] {
+  --paper: #ecf2ea;
+  --surface: #f7faf4;
+  --ink: #24301f;
+  --ink-dim: #63755c;
+  --line: #d3dfcd;
+  --line-soft: #e1e9db;
+  --focus: #2e7d4f;
+  --key-white: #fbfdf8;
+  --key-black: #253327;
+  --stave-bg: #fcfdf9;
+}
+
+/* Concert-hall blue-black. */
+:root[data-theme="midnight"] {
+  --paper: #12141c;
+  --surface: #1a1e2a;
+  --ink: #dfe4f2;
+  --ink-dim: #8e97ad;
+  --line: #2a3042;
+  --line-soft: #222736;
+  --focus: #8ab4ff;
+  --key-white: #e8ebf2;
+  --key-black: #0a0c12;
+  --stave-bg: #242a3a;
+}
+
+/* Chopin at 2 a.m.: deep violet night. */
+:root[data-theme="nocturne"] {
+  --paper: #151020;
+  --surface: #1e1730;
+  --ink: #e9e3f6;
+  --ink-dim: #a79dc4;
+  --line: #322a4e;
+  --line-soft: #282045;
+  --focus: #b9a3f7;
+  --key-white: #efecf6;
+  --key-black: #0f0b18;
+  --stave-bg: #281f44;
+}
+
+/* Big-band brass: marigold paper, dark bronze ink. */
+:root[data-theme="brass"] {
+  --paper: #f2bf3a;
+  --surface: #f8d878;
+  --ink: #3a2b06;
+  --ink-dim: #5e4b0e;
+  --line: #dcab25;
+  --line-soft: #eec858;
+  --focus: #8c2f1b;
+  --key-white: #fbeab2;
+  --key-black: #2c2004;
+  --stave-bg: #f9e096;
+}
+
+/* Seaside bandstand: aqua paper, deep teal ink, coral accent. */
+:root[data-theme="riviera"] {
+  --paper: #bfe8e5;
+  --surface: #e4f7f4;
+  --ink: #0d3538;
+  --ink-dim: #2f6b6a;
+  --line: #94cfc9;
+  --line-soft: #cdeeea;
+  --focus: #9c3a20;
+  --key-white: #f2fbfa;
+  --key-black: #123c3e;
+  --stave-bg: #eefaf8;
+}
+
+/* Neon violet stage, hot-pink spotlight. */
+:root[data-theme="synthwave"] {
+  --paper: #190f38;
+  --surface: #241650;
+  --ink: #f1e8ff;
+  --ink-dim: #ab97d9;
+  --line: #3a2a6e;
+  --line-soft: #2d1f5c;
+  --focus: #ff6aa9;
+  --key-white: #ece5f8;
+  --key-black: #0d0722;
+  --stave-bg: #2b1c5e;
+}
+
+/* Prometheus: dark hall, notes and keys glow in Scriabin's pitch colors,
+   playback highlight is the gold of the luce. */
+:root[data-theme="scriabin"] {
+  --paper: #140b11;
+  --surface: #1e1219;
+  --ink: #f1e7ea;
+  --ink-dim: #ab96a0;
+  --line: #372430;
+  --line-soft: #2b1c25;
+  --focus: #ffd766;
+  --key-white: #ede7e2;
+  --key-black: #0b060a;
+  --stave-bg: #1a0c12;
+}
+:root[data-theme="rosewood"] {
+  --paper: #1b1412;
+  --surface: #251a17;
+  --ink: #f0e4dc;
+  --ink-dim: #b39a8d;
+  --line: #3c2c26;
+  --line-soft: #2f221e;
+  --focus: #e8916a;
+  --key-white: #f3e9e2;
+  --key-black: #140e0c;
+  --stave-bg: #2c201c;
+}
+
+/* ---------- base ---------- */
+
+* { box-sizing: border-box; margin: 0; padding: 0 }
+html { scroll-behavior: smooth }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: "Source Sans 3", "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+}
+.mono { font-family: "Spline Sans Mono", ui-monospace, Menlo, Consolas, monospace }
+
+header { max-width: 880px; margin: 0 auto; padding: 48px 20px 8px }
+header h1 {
+  font-family: "Besley", Georgia, serif;
+  font-size: 2.4rem; font-weight: 700; letter-spacing: -0.01em; line-height: 1.15;
+}
+header h1 .tonic { color: var(--focus) }
+header p.sub {
+  color: var(--ink-dim); margin-top: 10px; max-width: 62ch; font-size: 1rem;
+}
+
+/* ---------- toolbar ---------- */
+
+.toolbar {
+  max-width: 880px; margin: 14px auto 0; padding: 10px 20px;
+  display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: center;
+  position: sticky; top: 0; z-index: 20;
+  background: linear-gradient(var(--paper) 88%, transparent);
+}
+#search {
+  background: var(--surface); border: 1px solid var(--line); color: var(--ink);
+  border-radius: 8px; padding: 9px 12px; font-size: 0.95rem; width: 220px;
+  font-family: inherit;
+}
+#search::placeholder { color: var(--ink-dim) }
+#search:focus { outline: 2px solid var(--focus); outline-offset: 1px; border-color: transparent }
+
+.rootpick, .themepick { display: flex; align-items: center; gap: 8px; flex-wrap: wrap }
+.lbl {
+  font-size: 0.8rem; font-weight: 600; color: var(--ink-dim);
+  text-transform: uppercase; letter-spacing: 0.07em;
+}
+.roots {
+  display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+  background: var(--surface);
+}
+.roots button {
+  border: none; background: transparent; color: var(--ink-dim); cursor: pointer;
+  font-family: "Spline Sans Mono", ui-monospace, Menlo, monospace; font-size: 0.82rem;
+  padding: 8px 0; width: 34px; border-right: 1px solid var(--line-soft);
+}
+.roots button:last-child { border-right: none }
+.roots button:hover { color: var(--ink); background: var(--line-soft) }
+.roots button[aria-pressed="true"] {
+  background: var(--ink); color: var(--paper); font-weight: 500;
+}
+.roots button:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px }
+
+#theme {
+  background: var(--surface); border: 1px solid var(--line); color: var(--ink);
+  border-radius: 8px; padding: 8px 10px; font-size: 0.9rem; font-family: inherit;
+  cursor: pointer;
+}
+#theme:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px }
+
+/* ---------- category chips ---------- */
+
+.chiprow {
+  max-width: 880px; margin: 4px auto 0; padding: 0 20px 4px;
+  display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+.chip {
+  background: var(--surface);
+  border: 1px solid color-mix(in srgb, var(--acc, var(--ink-dim)) 38%, var(--line));
+  color: var(--ink-dim);
+  border-radius: 999px; padding: 6px 13px; font-size: 0.82rem; cursor: pointer;
+  font-family: inherit; white-space: nowrap; flex: 0 0 auto;
+  -webkit-tap-highlight-color: transparent;
+}
+.chip:hover { color: var(--acc, var(--ink)); border-color: var(--acc, var(--ink-dim)) }
+.chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px }
+
+/* ---------- sections and cards ---------- */
+
+main { max-width: 880px; margin: 0 auto; padding: 8px 20px 90px }
+/* keep a section heading clear of the sticky toolbar when a chip scrolls to it */
+details.cat { margin-top: 46px; scroll-margin-top: 84px }
+details.cat > summary {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: baseline; gap: 10px;
+  border-bottom: 2px solid var(--acc, var(--line)); padding-bottom: 8px;
+  -webkit-tap-highlight-color: transparent;
+}
+details.cat > summary::-webkit-details-marker { display: none }
+details.cat > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px }
+details.cat > summary h2 {
+  font-family: "Besley", Georgia, serif;
+  font-size: 1.4rem; font-weight: 600; color: var(--acc, var(--ink));
+  display: flex; align-items: baseline; gap: 10px;
+}
+details.cat > summary h2 .count {
+  font-size: 0.78rem; color: var(--ink-dim);
+  font-family: "Spline Sans Mono", ui-monospace, Menlo, monospace;
+}
+details.cat > summary::after {
+  content: ""; margin-left: auto; align-self: center;
+  width: 9px; height: 9px; flex: 0 0 auto;
+  border-right: 2px solid var(--acc, var(--ink-dim));
+  border-bottom: 2px solid var(--acc, var(--ink-dim));
+  transform: rotate(-45deg); transition: transform 0.15s ease;
+}
+details.cat[open] > summary::after { transform: rotate(45deg) }
+details.cat > p.catnote { color: var(--ink-dim); font-size: 0.92rem; margin-top: 8px; max-width: 70ch }
+
+.card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-left: 4px solid var(--acc, var(--line));
+  border-radius: 10px; margin-top: 18px; padding: 16px 18px 16px;
+}
+.card .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap }
+.card h3 { font-family: "Besley", Georgia, serif; font-size: 1.12rem; font-weight: 600 }
+.card h3 a {
+  color: inherit; text-decoration: none;
+  border-bottom: 1px dotted var(--ink-dim);
+}
+.card h3 a:hover { color: var(--acc, var(--focus)); border-bottom-style: solid }
+.card h3 a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px }
+.card .alias { color: var(--ink-dim); font-size: 0.85rem; font-style: italic }
+.card .nbadge {
+  margin-left: auto; font-size: 0.72rem; color: var(--ink-dim);
+  border: 1px solid var(--line); border-radius: 5px; padding: 2px 7px;
+  font-family: "Spline Sans Mono", ui-monospace, Menlo, monospace; white-space: nowrap;
+}
+.card .desc { color: var(--ink-dim); font-size: 0.9rem; margin-top: 4px; max-width: 72ch }
+
+.stavewrap {
+  border: 1px solid var(--line-soft); border-radius: 8px; margin-top: 12px;
+  padding: 2px 8px; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  background: var(--stave-bg);
+}
+.stavewrap svg { display: block }
+
+.meta { display: flex; flex-wrap: wrap; gap: 10px 22px; margin-top: 12px; align-items: center }
+.meta .kv { font-size: 0.85rem; color: var(--ink-dim); min-width: 0 }
+.meta .kv b {
+  color: var(--ink); font-weight: 500;
+  font-family: "Spline Sans Mono", ui-monospace, Menlo, monospace; font-size: 0.84rem;
+  overflow-wrap: anywhere;
+}
+.playbtn {
+  background: var(--acc, var(--ink)); color: var(--paper); border: none; border-radius: 7px;
+  padding: 8px 16px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  font-family: inherit; min-height: 36px;
+}
+.playbtn:hover { filter: brightness(1.1) }
+.playbtn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
+.playbtn[disabled] { opacity: 0.5; cursor: default }
+
+/* ---------- mini keyboard: one octave, scale members lit in the category color ---------- */
+
+.kb {
+  position: relative; margin-top: 14px; height: 52px; max-width: 340px;
+  display: flex; border-radius: 6px; overflow: hidden;
+  border: 1px solid var(--line);
+}
+.kb .wk {
+  flex: 1; background: var(--key-white); border-right: 1px solid var(--line-soft);
+  display: flex; align-items: flex-end; justify-content: center;
+  font-size: 0.6rem; color: color-mix(in srgb, var(--key-black) 32%, var(--key-white));
+  padding-bottom: 3px;
+  font-family: "Spline Sans Mono", ui-monospace, Menlo, monospace;
+}
+.kb .wk:last-child { border-right: none }
+.kb .wk.on { background: color-mix(in srgb, var(--acc) 26%, var(--key-white)); color: var(--key-black) }
+.kb .wk.root { background: var(--acc); color: var(--paper); font-weight: 500 }
+.kb .bk {
+  position: absolute; top: 0; width: 9.5%; height: 60%;
+  background: var(--key-black); border-radius: 0 0 3px 3px; z-index: 2;
+}
+.kb .bk.on { background: color-mix(in srgb, var(--acc) 72%, var(--key-black)) }
+.kb .bk.root { background: var(--acc); outline: 1px solid rgba(0, 0, 0, 0.25) }
+
+/* Scriabin theme: lit keys take their pitch color instead of the category
+   accent (--pc is set per key in keyboard.ts). */
+[data-theme="scriabin"] .kb .wk.on { background: color-mix(in srgb, var(--pc) 55%, var(--key-white)) }
+[data-theme="scriabin"] .kb .wk.root { background: var(--pc); color: var(--key-black) }
+[data-theme="scriabin"] .kb .bk.on { background: color-mix(in srgb, var(--pc) 75%, var(--key-black)) }
+[data-theme="scriabin"] .kb .bk.root { background: var(--pc) }
+
+/* ---------- misc ---------- */
+
+.hidden { display: none }
+footer {
+  max-width: 880px; margin: 0 auto; padding: 24px 20px 60px; color: var(--ink-dim);
+  font-size: 0.85rem; border-top: 1px solid var(--line);
+}
+#noresult { color: var(--ink-dim); max-width: 880px; margin: 40px auto 0; padding: 0 20px; display: none }
+
+/* offline status line in the footer */
+.offline { margin-top: 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px }
+.linkbtn {
+  background: none; border: none; padding: 6px 0; min-height: 44px;
+  color: var(--focus); font: inherit; font-size: 0.85rem; cursor: pointer;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.linkbtn[disabled] { color: var(--ink-dim); cursor: default; text-decoration: none }
+.linkbtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto }
+  details.cat > summary::after { transition: none }
+}
+
+/* ---------- phones ----------
+   The toolbar stays sticky, so it must stay short: search and theme share one
+   row and the twelve roots become a single horizontally scrolling strip rather
+   than a two-row grid. Tap targets are kept at 44px and font sizes at 16px on
+   the form controls, which is what stops iOS Safari zooming on focus. */
+
+@media (max-width: 640px) {
+  header { padding: 28px 16px 4px }
+  header h1 { font-size: 1.7rem }
+  header p.sub { font-size: 0.95rem }
+
+  .toolbar {
+    padding: 8px 16px; gap: 8px 10px; margin-top: 8px;
+    background: linear-gradient(var(--paper) 92%, transparent);
+  }
+  #search { flex: 1 1 150px; width: auto; min-width: 0; font-size: 16px; padding: 10px 12px }
+  #theme { font-size: 16px; padding: 10px; max-width: 42vw }
+  .themepick { flex: 0 0 auto }
+  .themepick .lbl { display: none }
+
+  /* search and theme share the first row; the roots strip takes the second */
+  .rootpick { width: 100%; gap: 0; order: 3 }
+  .rootpick .lbl { display: none }
+  .roots {
+    width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; scroll-snap-type: x proximity;
+  }
+  .roots::-webkit-scrollbar { display: none }
+  .roots button {
+    flex: 0 0 auto; width: 44px; min-height: 44px; padding: 0;
+    font-size: 0.95rem; scroll-snap-align: center;
+  }
+
+  .chiprow { padding: 0 16px 4px }
+  .chip { padding: 9px 14px; font-size: 0.85rem }
+
+  main { padding: 4px 16px 80px }
+  details.cat { margin-top: 34px; scroll-margin-top: 108px }
+  details.cat > summary h2 { font-size: 1.25rem }
+
+  .card { padding: 14px; margin-top: 14px }
+  .card .head { gap: 6px 10px }
+  .card .nbadge { margin-left: 0 }
+  .card .desc, .card .alias { font-size: 0.88rem }
+  .meta { gap: 10px 16px }
+  .playbtn { min-height: 44px; padding: 10px 18px; flex: 0 0 auto }
+  .kb { max-width: 100%; height: 58px }
+
+  footer { padding: 20px 16px 48px }
+  #noresult { padding: 0 16px }
+}
+
+/* Very narrow phones: the note list is the only thing that still crowds. */
+@media (max-width: 380px) {
+  header h1 { font-size: 1.5rem }
+  .meta .kv { flex: 1 1 100% }
+}
+
+/* Landscape phones have almost no vertical room, so the toolbar stops sticking
+   and the header shrinks out of the way. */
+@media (max-height: 480px) and (orientation: landscape) {
+  .toolbar { position: static }
+  header { padding: 14px 20px 0 }
+  header h1 { font-size: 1.4rem }
+  header p.sub { display: none }
+  details.cat { margin-top: 26px; scroll-margin-top: 8px }
+}
+
+/* Notched phones: keep content out of the rounded corners and home indicator. */
+@media (max-width: 640px) {
+  @supports (padding: max(0px)) {
+    header, .toolbar, .chiprow, main, footer, #noresult {
+      padding-left: max(16px, env(safe-area-inset-left));
+      padding-right: max(16px, env(safe-area-inset-right));
+    }
+    main { padding-bottom: max(80px, calc(48px + env(safe-area-inset-bottom))) }
+  }
+}
