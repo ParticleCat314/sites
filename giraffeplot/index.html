@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>giraffeplot — demo</title>
+<meta name="description" content="Chart demos built on giraffeplot.">
+<style>
+:root {
+  --bg: #f7f6f3;
+  --ink: #1c1b18;
+  --dim: #8a8577;
+  --rule: #dcd8cc;
+  --accent: #a4552a;
+  --panel: #fffefb;
+}
+:root[data-theme="dark"] {
+  --bg: #171614;
+  --ink: #e8e4da;
+  --dim: #7d7869;
+  --rule: #2e2c27;
+  --accent: #d98a56;
+  --panel: #1d1c19;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171614;
+    --ink: #e8e4da;
+    --dim: #7d7869;
+    --rule: #2e2c27;
+    --accent: #d98a56;
+    --panel: #1d1c19;
+  }
+}
+* { margin: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 15px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  padding: clamp(1.5rem, 5vw, 4rem) clamp(1rem, 4vw, 3rem);
+  max-width: 72rem;
+  margin: 0 auto;
+}
+header { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; }
+h1 {
+  font-size: clamp(1.3rem, 4vw, 1.7rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+h1 .slash { color: var(--accent); }
+.sub { color: var(--dim); font-size: 0.85rem; }
+header .spacer { flex: 1; }
+button.theme-toggle {
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  color: var(--dim);
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.7rem;
+  cursor: pointer;
+}
+button.theme-toggle:hover { color: var(--accent); border-color: var(--accent); }
+main {
+  margin-top: 2.5rem;
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 760px) { main { grid-template-columns: 1fr; } }
+.card {
+  background: var(--panel);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 1rem 1.1rem 0.9rem;
+  min-width: 0;
+}
+.card.wide { grid-column: 1 / -1; }
+.card h2 { font-size: 0.9rem; font-weight: 600; }
+.card p { color: var(--dim); font-size: 0.78rem; margin: 0.15rem 0 0.7rem; }
+.card canvas { display: block; width: 100%; height: 220px; }
+.card.wide canvas { height: 260px; }
+.card .hint { color: var(--dim); font-size: 0.72rem; margin: 0.5rem 0 0; }
+footer {
+  margin-top: 2.5rem;
+  color: var(--dim);
+  font-size: 0.75rem;
+}
+footer a { color: var(--dim); }
+footer a:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="slash">/</span> giraffeplot</h1>
+  <span class="sub">dependency-free canvas charts — live demo</span>
+  <span class="spacer"></span>
+  <button class="theme-toggle" id="theme-toggle">dark</button>
+</header>
+
+<main>
+  <section class="card wide">
+    <h2>streaming</h2>
+    <p>Two series pushed at 20 Hz into a 60-second retention window. Click a legend entry to toggle a series; hover for the crosshair readout.</p>
+    <canvas id="c-stream"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>histogram + density</h2>
+    <p>4&thinsp;000 latency observations, straight in — bars are counts per bin, the curve is a kernel estimate. Both normalized to density.</p>
+    <canvas id="c-hist"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>candlestick</h2>
+    <p>120 candles from a synthetic random walk. Colour shows direction only; drag to pan, scroll to zoom, double-click to reset.</p>
+    <canvas id="c-candle"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>heatmap</h2>
+    <p>A 56 × 36 scalar field through a diverging ramp centred on zero.</p>
+    <canvas id="c-heat"></canvas>
+  </section>
+
+  <section class="card">
+    <h2>wind rose</h2>
+    <p>2&thinsp;000 bearings counted into 16 sectors — 359° and 1° fall together, as they should.</p>
+    <canvas id="c-rose"></canvas>
+  </section>
+
+  <section class="card wide">
+    <h2>3d surface</h2>
+    <p>An orthographic surface on the same long-form rows as the heatmap. Drag to orbit — the camera is page code, not library code.</p>
+    <canvas id="c-surface"></canvas>
+    <p class="hint">drag horizontally to rotate, vertically to tilt</p>
+  </section>
+</main>
+
+<footer>
+  single-file library, no dependencies — <a href="../">← index of projects</a>
+</footer>
+
+<script src="giraffeplot.min.js"></script>
+<script src="demo.js"></script>
+</body>
+</html>

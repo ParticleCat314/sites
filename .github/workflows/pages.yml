@@ -50,6 +50,7 @@ jobs:
           cd ..
           cp -r shader-editor/dist _site/shader-editor
           cp -r fluid _site/fluid
+          cp -r giraffeplot _site/giraffeplot
 
       - uses: actions/upload-pages-artifact@v3
         with:
