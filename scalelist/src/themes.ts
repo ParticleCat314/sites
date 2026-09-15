@@ -55,6 +55,7 @@ export function initThemePicker(container: HTMLElement, preferred?: string | nul
 
   const select = document.createElement("select");
   select.id = "theme";
+  select.autocomplete = "off"; // form restoration must not fight the saved theme
   select.setAttribute("aria-labelledby", "themelbl");
   for (const theme of THEMES) {
     const option = document.createElement("option");

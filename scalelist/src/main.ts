@@ -408,6 +408,35 @@ function gotoScale(slug: string, root: string): void {
   revealScale(slug);
 }
 
+/*
+ * Settings persist in localStorage and the controls are set from it on load.
+ * Without this, browser form restoration on refresh keeps the panel's visual
+ * state (e.g. Descend still ticked) while the script state resets to
+ * defaults, so what the panel shows and what playback does disagree.
+ */
+const SETTINGS_KEY = "scale-compendium-settings";
+
+function loadSettings(): void {
+  try {
+    const s = JSON.parse(localStorage.getItem(SETTINGS_KEY) ?? "{}") as {
+      tempo?: unknown; descend?: unknown; drone?: unknown;
+    };
+    if (typeof s.tempo === "number" && s.tempo >= 80 && s.tempo <= 320) tempo = s.tempo;
+    descend = s.descend === true;
+    drone = s.drone === true;
+  } catch {
+    // corrupt storage or private mode — keep defaults
+  }
+}
+
+function saveSettings(): void {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify({ tempo, descend, drone }));
+  } catch {
+    // private mode etc. — settings still apply for this visit
+  }
+}
+
 function initSettings(): void {
   const btn = byId<HTMLButtonElement>("settingsbtn");
   const panel = byId<HTMLElement>("settingspanel");
@@ -415,6 +444,12 @@ function initSettings(): void {
   const tempoVal = byId<HTMLElement>("tempoval");
   const descendEl = byId<HTMLInputElement>("descend");
   const droneEl = byId<HTMLInputElement>("drone");
+
+  loadSettings();
+  tempoEl.value = String(tempo);
+  tempoVal.textContent = String(tempo);
+  descendEl.checked = descend;
+  droneEl.checked = drone;
 
   const setOpen = (open: boolean) => {
     panel.hidden = !open;
@@ -436,14 +471,17 @@ function initSettings(): void {
   tempoEl.addEventListener("input", () => {
     tempo = Number(tempoEl.value);
     tempoVal.textContent = tempoEl.value;
+    saveSettings();
   });
   descendEl.addEventListener("change", () => {
     descend = descendEl.checked;
+    saveSettings();
     buildPage();
   });
   // drone is playback-only, so no rebuild; it applies from the next Play
   droneEl.addEventListener("change", () => {
     drone = droneEl.checked;
+    saveSettings();
   });
 }
 
