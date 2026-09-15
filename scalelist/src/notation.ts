@@ -73,6 +73,9 @@ function applyPitchColors(container: HTMLElement, pitchClasses: number[]): void 
     const color = css.getPropertyValue(`--pc${pc}`).trim();
     if (!color) return;
     for (const el of group.querySelectorAll<SVGElement>("*")) {
+      // ledger lines are stroke-only paths sitting directly in the note
+      // group; leave them at the stave color like the staff lines
+      if (el.parentElement === (group as Element) && el.getAttribute("fill") === "none") continue;
       if (el.getAttribute("fill") !== "none") el.setAttribute("fill", color);
       if (el.getAttribute("stroke") !== "none") el.setAttribute("stroke", color);
     }

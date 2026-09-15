@@ -102,6 +102,8 @@ export class PlaybackEngine {
   private startTime = 0;
   private playing = false;
   private stopScheduled: (() => void) | null = null;
+  /** Set by stop() while play() is still awaiting the piano load. */
+  private cancelled = false;
 
   constructor(
     events: NoteEvent[],
@@ -127,8 +129,10 @@ export class PlaybackEngine {
 
   async play(): Promise<void> {
     if (this.playing) return;
+    this.cancelled = false;
     const { piano, context } = await getPiano();
-    if (this.playing) return; // double-start guard across the await
+    // double-start / stopped-while-loading guards across the await
+    if (this.playing || this.cancelled) return;
     this.playing = true;
 
     const secondsPerBeat = 60 / this.options.tempo;
@@ -179,6 +183,7 @@ export class PlaybackEngine {
   }
 
   stop(): void {
+    this.cancelled = true;
     if (!this.playing) return;
     this.stopScheduled?.();
     this.finish();

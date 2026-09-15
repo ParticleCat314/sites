@@ -139,7 +139,9 @@ export function renderScore(
   if (score.timeSignature) stave.addTimeSignature(score.timeSignature);
   if (score.keySignature) stave.addKeySignature(score.keySignature);
   stave.setStyle({ fillStyle: theme.staveColor, strokeStyle: theme.staveColor });
-  stave.setContext(context).draw();
+  // drawWithStyle, not draw: Stave.draw() ignores the style set above, leaving
+  // the lines, clef and barlines at the context default (black)
+  stave.setContext(context).drawWithStyle();
 
   const voice = new Voice({ numBeats: 4, beatValue: 4 });
   voice.setStrict(false);
