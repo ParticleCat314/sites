@@ -1,223 +1,102 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Shader Editor</title>
-        <style>
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-            }
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Index of /fluid</title>
+<meta name="description" content="2D fluid simulations.">
+<style>
+:root {
+  --bg: #f7f6f3;
+  --ink: #1c1b18;
+  --dim: #8a8577;
+  --rule: #dcd8cc;
+  --accent: #a4552a;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171614;
+    --ink: #e8e4da;
+    --dim: #7d7869;
+    --rule: #2e2c27;
+    --accent: #d98a56;
+  }
+}
+* { margin: 0; box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 16px/1.5 ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  padding: clamp(2rem, 8vw, 6rem) clamp(1.25rem, 6vw, 4rem);
+  max-width: 44rem;
+}
+h1 {
+  font-size: clamp(1.4rem, 4vw, 1.9rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+h1 .slash { color: var(--accent); }
+.sub {
+  color: var(--dim);
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+}
+ul {
+  list-style: none;
+  margin-top: 3rem;
+  border-top: 1px solid var(--rule);
+}
+li { border-bottom: 1px solid var(--rule); }
+li a {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem 1.5rem;
+  align-items: baseline;
+  padding: 1.1rem 0.25rem;
+  text-decoration: none;
+  color: inherit;
+}
+li a:hover .name, li a:focus-visible .name { color: var(--accent); }
+li a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.name { font-weight: 600; }
+.date { color: var(--dim); font-size: 0.8rem; }
+.desc {
+  grid-column: 1 / -1;
+  color: var(--dim);
+  font-size: 0.85rem;
+}
+footer {
+  margin-top: 3rem;
+  color: var(--dim);
+  font-size: 0.75rem;
+}
+footer a { color: var(--dim); }
+footer a:hover { color: var(--accent); }
+</style>
+</head>
+<body>
 
-            body {
-                font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-                background: #1a1a1a;
-                color: #e0e0e0;
-                overflow: hidden;
-                height: 100vh;
-            }
+<h1><span class="slash">/</span> fluid</h1>
+<p class="sub">2D fluid simulations</p>
 
-            .container {
-                display: flex;
-                height: 100vh;
-                width: 100vw;
-            }
+<ul>
+  <li>
+    <a href="simulation.html">
+      <span class="name">simulation</span>
+      <span class="date">2026</span>
+      <span class="desc">High-resolution realtime 2D fluid simulation — paint velocity and dye with the pointer.</span>
+    </a>
+  </li>
+  <li>
+    <a href="species.html">
+      <span class="name">species</span>
+      <span class="date">2026</span>
+      <span class="desc">Multi-species mass-conserving fluid simulation.</span>
+    </a>
+  </li>
+</ul>
 
-            .editor-panel {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                background: #1e1e1e;
-                border-right: 1px solid #333;
-            }
+<footer><a href="../">← index of projects</a></footer>
 
-            .canvas-panel {
-                flex: 1;
-                display: flex;
-                flex-direction: column;
-                background: #252525;
-            }
-
-            .panel-header {
-                padding: 12px 20px;
-                background: #2d2d2d;
-                border-bottom: 1px solid #333;
-                font-weight: 600;
-                font-size: 14px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-
-            .editor-wrapper {
-                flex: 1;
-                position: relative;
-                overflow: hidden;
-            }
-
-            #code-editor {
-                width: 100%;
-                height: 100%;
-                padding: 20px;
-                background: #1e1e1e;
-                color: #d4d4d4;
-                border: none;
-                outline: none;
-                font-family: "Consolas", "Monaco", "Courier New", monospace;
-                font-size: 14px;
-                line-height: 1.6;
-                resize: none;
-                tab-size: 4;
-            }
-
-            #code-editor::selection {
-                background: #264f78;
-            }
-
-            .canvas-wrapper {
-                flex: 1;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 20px;
-                background: #252525;
-            }
-
-            #shader-canvas {
-                max-width: 100%;
-                max-height: 100%;
-                border: 1px solid #333;
-                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            }
-
-            .controls {
-                display: flex;
-                gap: 10px;
-            }
-
-            button {
-                padding: 6px 16px;
-                background: #0e639c;
-                color: #fff;
-                border: none;
-                border-radius: 4px;
-                cursor: pointer;
-                font-size: 13px;
-                font-weight: 500;
-                transition: background 0.2s;
-            }
-
-            button:hover {
-                background: #1177bb;
-            }
-
-            button:active {
-                background: #0d5a8f;
-            }
-
-            .reset-btn {
-                background: #3a3a3a;
-            }
-
-            .reset-btn:hover {
-                background: #4a4a4a;
-            }
-
-            .status {
-                display: inline-block;
-                padding: 4px 12px;
-                background: #2d2d2d;
-                border-radius: 4px;
-                font-size: 12px;
-                color: #888;
-            }
-
-            .status.success {
-                color: #4ec9b0;
-            }
-
-            .status.error {
-                color: #f48771;
-            }
-
-            .resizer {
-                width: 4px;
-                background: #333;
-                cursor: col-resize;
-                transition: background 0.2s;
-            }
-
-            .resizer:hover {
-                background: #0e639c;
-            }
-
-            @media (max-width: 768px) {
-                .container {
-                    flex-direction: column;
-                }
-
-                .editor-panel {
-                    border-right: none;
-                    border-bottom: 1px solid #333;
-                }
-
-                .resizer {
-                    display: none;
-                }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="editor-panel">
-                <div class="panel-header">
-                    <span>Fragment Shader</span>
-                    <div class="controls">
-                        <button id="run-btn">Run</button>
-                        <button id="reset-btn" class="reset-btn">Reset</button>
-                    </div>
-                </div>
-                <div class="editor-wrapper">
-                    <textarea id="code-editor" spellcheck="false">
-precision mediump float;
-
-uniform vec2 u_resolution;
-uniform float u_time;
-
-void main() {
-    vec2 uv = gl_FragCoord.xy / u_resolution;
-
-    // Create a gradient effect
-    vec3 color = vec3(0.0);
-    color.r = 0.5 + 0.5 * sin(u_time + uv.x * 3.0);
-    color.g = 0.5 + 0.5 * sin(u_time + uv.y * 3.0 + 2.0);
-    color.b = 0.5 + 0.5 * sin(u_time + (uv.x + uv.y) * 3.0 + 4.0);
-
-    gl_FragColor = vec4(color, 1.0);
-}</textarea
-                    >
-                </div>
-            </div>
-
-            <div class="resizer" id="resizer"></div>
-
-            <div class="canvas-panel">
-                <div class="panel-header">
-                    <span>Output</span>
-                    <span class="status" id="status">Ready</span>
-                </div>
-                <div class="canvas-wrapper">
-                    <canvas
-                        id="shader-canvas"
-                        width="800"
-                        height="600"
-                    ></canvas>
-                </div>
-            </div>
-        </div>
-
-        <script src="main.js"></script>
-    </body>
+</body>
 </html>
