@@ -94,6 +94,15 @@ export async function preloadPiano(): Promise<void> {
   await pianoReady;
 }
 
+/** Play a block chord once through the shared piano (used by chord chips). */
+export async function playChord(midis: number[], durationSec = 1.4): Promise<void> {
+  const { piano, context } = await getPiano();
+  const start = context.currentTime + 0.05;
+  for (const midi of midis) {
+    piano.start({ note: midi, time: start, duration: durationSec, velocity: PLAY_VELOCITY });
+  }
+}
+
 export class PlaybackEngine {
   private events: NoteEvent[] = [];
   private options: Required<PlaybackOptions>;
@@ -115,6 +124,7 @@ export class PlaybackEngine {
       tempo: options.tempo ?? 90,
       loop: options.loop ?? false,
       volume: options.volume ?? 1,
+      drone: options.drone ?? [],
     };
     this.callbacks = callbacks;
   }
@@ -125,6 +135,10 @@ export class PlaybackEngine {
 
   setTempo(tempo: number): void {
     this.options.tempo = tempo;
+  }
+
+  setDrone(drone: number[]): void {
+    this.options.drone = drone;
   }
 
   async play(): Promise<void> {
@@ -156,11 +170,22 @@ export class PlaybackEngine {
         stops.push(stop as unknown as () => void);
       }
     }
-    this.stopScheduled = () => stops.forEach((stop) => stop());
-
     const last = this.events[this.events.length - 1];
     const totalBeats = last ? last.startBeats + last.durationBeats : 0;
     const endTime = start + totalBeats * secondsPerBeat;
+
+    // sustained underneath the whole pass; the velocity has to stay inside
+    // the one loaded layer, so soften by staying at its bottom edge
+    for (const midi of this.options.drone) {
+      const stop = piano.start({
+        note: midi,
+        time: start,
+        duration: totalBeats * secondsPerBeat,
+        velocity: VELOCITY_RANGE[0],
+      });
+      stops.push(stop as unknown as () => void);
+    }
+    this.stopScheduled = () => stops.forEach((stop) => stop());
 
     let lastIndex = -1;
     const tick = () => {

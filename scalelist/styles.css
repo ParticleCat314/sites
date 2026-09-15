@@ -381,6 +381,7 @@ details.cat > p.catnote { color: var(--ink-dim); font-size: 0.92rem; margin-top:
   background: var(--surface); border: 1px solid var(--line);
   border-left: 4px solid var(--acc, var(--line));
   border-radius: 10px; margin-top: 18px; padding: 16px 18px 16px;
+  scroll-margin-top: 84px;
 }
 .card .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap }
 .card h3 { font-family: "Besley", Georgia, serif; font-size: 1.12rem; font-weight: 600 }
@@ -420,6 +421,43 @@ details.cat > p.catnote { color: var(--ink-dim); font-size: 0.92rem; margin-top:
 .playbtn:hover { filter: brightness(1.1) }
 .playbtn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px }
 .playbtn[disabled] { opacity: 0.5; cursor: default }
+
+/* copy-link anchor: quiet until hovered */
+.card .anchor {
+  border: none; background: none; cursor: pointer; padding: 0 2px;
+  color: var(--line); font-size: 0.95rem;
+  font-family: "Spline Sans Mono", ui-monospace, Menlo, monospace;
+}
+.card:hover .anchor, .card .anchor:focus-visible { color: var(--ink-dim) }
+.card .anchor:hover { color: var(--acc, var(--focus)) }
+.card .anchor:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px }
+
+/* diatonic chords: one slim row of playable chips */
+.chords { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; align-items: center }
+.chords .lbl { margin-right: 4px }
+.chordchip {
+  display: inline-flex; align-items: baseline; gap: 5px;
+  background: transparent; border: 1px solid var(--line-soft); border-radius: 6px;
+  padding: 3px 8px; cursor: pointer; font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.chordchip:hover { border-color: var(--acc, var(--ink-dim)); background: var(--stave-bg) }
+.chordchip:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px }
+.chordchip .cdeg { font-size: 0.68rem; color: var(--ink-dim) }
+.chordchip .csym {
+  font-size: 0.8rem; color: var(--ink); font-weight: 500;
+  font-family: "Spline Sans Mono", ui-monospace, Menlo, monospace;
+}
+
+/* same-pitch-set cross-links */
+.related { margin-top: 10px; font-size: 0.78rem; color: var(--ink-dim) }
+.related .linklike {
+  border: none; background: none; padding: 0; cursor: pointer; font: inherit;
+  color: var(--ink-dim); text-decoration: underline;
+  text-decoration-color: var(--line); text-underline-offset: 2px;
+}
+.related .linklike:hover { color: var(--acc, var(--ink)); text-decoration-color: currentColor }
+.related .linklike:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px }
 
 /* ---------- mini keyboard: one octave, scale members lit in the category color ---------- */
 

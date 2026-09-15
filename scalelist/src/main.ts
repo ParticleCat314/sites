@@ -1,7 +1,10 @@
 import { CAT_COLORS, DATA, ROOTS, type Scale } from "./data";
-import { degreeFormula, intervalPattern, parseNote, prettyNote, transpose } from "./theory";
+import {
+  degreeFormula, diatonicChords, intervalPattern, midiSequence, parseNote,
+  pitchClassMask, prettyNote, rotateMask, transpose,
+} from "./theory";
 import { renderStave } from "./notation";
-import type { MusicCard } from "./vendor/sheetmusiccard/index";
+import { playChord, type MusicCard } from "./vendor/sheetmusiccard/index";
 import { buildKeyboard } from "./keyboard";
 import { defaultThemeId, initThemePicker } from "./themes";
 import { initOffline, syncThemeColor } from "./offline";
@@ -26,6 +29,40 @@ searchEl.value = params.get("q") ?? "";
 /** Playback settings, adjustable from the settings panel. */
 let tempo = 200;
 let descend = false;
+let drone = false;
+
+function slugify(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+interface ScaleRef {
+  scale: Scale;
+  slug: string;
+  /** Pitch classes of the canonical C spelling, as a 12-bit mask. */
+  mask: number;
+}
+
+const scaleRefs = new Map<Scale, ScaleRef>();
+const ALL_SCALES: ScaleRef[] = DATA.flatMap((c) =>
+  c.scales.map((scale) => {
+    const ref = { scale, slug: slugify(scale.name), mask: pitchClassMask(scale.notes) };
+    scaleRefs.set(scale, ref);
+    return ref;
+  })
+);
+
+/** Other scales sharing this card's exact pitch-class set. */
+function relatedScales(ref: ScaleRef, rootPc: number): { ref: ScaleRef; root: string }[] {
+  const target = rotateMask(ref.mask, rootPc);
+  const out: { ref: ScaleRef; root: string }[] = [];
+  for (const other of ALL_SCALES) {
+    if (other === ref) continue;
+    for (let k = 0; k < 12; k++) {
+      if (rotateMask(other.mask, k) === target) out.push({ ref: other, root: ROOTS[k]! });
+    }
+  }
+  return out;
+}
 
 /** The card currently playing, so starting one scale stops the previous. */
 let playingCard: MusicCard | null = null;
@@ -39,7 +76,7 @@ function syncUrl(): void {
   const q = searchEl.value.trim();
   if (q) p.set("q", q);
   const query = p.toString();
-  history.replaceState(null, "", query ? `?${query}` : location.pathname);
+  history.replaceState(null, "", (query ? `?${query}` : location.pathname) + location.hash);
 }
 
 function buildRootPicker(): void {
@@ -76,9 +113,11 @@ const staveObserver = new IntersectionObserver(
 
 function buildCard(scale: Scale, categoryName: string, rootPc: number): HTMLElement {
   const notes = transpose(scale.notes, currentRoot);
+  const ref = scaleRefs.get(scale)!;
 
   const card = document.createElement("article");
   card.className = "card";
+  card.id = `s-${ref.slug}`;
   const degrees = degreeFormula(scale.notes);
   card.dataset.search = [
     scale.name,
@@ -105,6 +144,22 @@ function buildCard(scale: Scale, categoryName: string, rootPc: number): HTMLElem
     title.textContent = scale.name;
   }
   head.appendChild(title);
+
+  const anchor = document.createElement("button");
+  anchor.type = "button";
+  anchor.className = "anchor";
+  anchor.textContent = "#";
+  anchor.title = "Copy link to this scale";
+  anchor.setAttribute("aria-label", `Copy link to ${scale.name}`);
+  anchor.addEventListener("click", () => {
+    history.replaceState(null, "", `${location.pathname}${location.search}#${ref.slug}`);
+    void navigator.clipboard?.writeText(location.href).then(() => {
+      anchor.textContent = "✓";
+      window.setTimeout(() => { anchor.textContent = "#"; }, 1200);
+    });
+  });
+  head.appendChild(anchor);
+
   if (scale.alias) {
     const alias = document.createElement("span");
     alias.className = "alias";
@@ -151,7 +206,52 @@ function buildCard(scale: Scale, categoryName: string, rootPc: number): HTMLElem
   addKv("Notes", notes.map(prettyNote).join(" "));
   card.appendChild(meta);
 
+  const chords = diatonicChords(scale.notes, notes);
+  if (chords) {
+    const row = document.createElement("div");
+    row.className = "chords";
+    const lab = document.createElement("span");
+    lab.className = "lbl";
+    lab.textContent = "Chords";
+    row.appendChild(lab);
+    for (const chord of chords) {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chordchip";
+      chip.title = `${chord.notes.map(prettyNote).join(" ")} — click to play`;
+      const deg = document.createElement("span");
+      deg.className = "cdeg";
+      deg.textContent = chord.roman;
+      const sym = document.createElement("span");
+      sym.className = "csym";
+      sym.textContent = chord.symbol;
+      chip.append(deg, sym);
+      chip.addEventListener("click", () => void playChord(chord.midis));
+      row.appendChild(chip);
+    }
+    card.appendChild(row);
+  }
+
   card.appendChild(buildKeyboard(notes.map((n) => parseNote(n).pitchClass), rootPc));
+
+  const related = relatedScales(ref, rootPc);
+  if (related.length) {
+    const rel = document.createElement("p");
+    rel.className = "related";
+    rel.append("Same notes as ");
+    const shown = related.slice(0, 6);
+    shown.forEach((r, i) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "linklike";
+      b.textContent = `${prettyNote(r.root)} ${r.ref.scale.name}`;
+      b.addEventListener("click", () => gotoScale(r.ref.slug, r.root));
+      rel.appendChild(b);
+      if (i < shown.length - 1) rel.append(" · ");
+    });
+    if (related.length > shown.length) rel.append(` +${related.length - shown.length} more`);
+    card.appendChild(rel);
+  }
 
   let musicCard: MusicCard | null = null;
   const ensureStave = (): MusicCard => {
@@ -179,6 +279,7 @@ function buildCard(scale: Scale, categoryName: string, rootPc: number): HTMLElem
     playingCard?.stop();
     playingCard = mc;
     mc.setTempo(tempo);
+    mc.setDrone(drone ? [midiSequence(notes)[0]! - 12] : []);
     playBtn.textContent = "◼ Stop";
     void mc.play();
   });
@@ -284,12 +385,36 @@ function applyFilter(): void {
   noResult.style.display = visibleTotal ? "none" : "block";
 }
 
+/** Expand the section containing a scale card and scroll to it. */
+function revealScale(slug: string): void {
+  const card = document.getElementById(`s-${slug}`);
+  if (!card) return;
+  const section = card.closest<HTMLDetailsElement>("details.cat");
+  if (section) {
+    setOpen(section, true);
+    collapsedCats.delete(Number(section.id.slice(3)));
+  }
+  card.scrollIntoView({ block: "start" });
+}
+
+function gotoScale(slug: string, root: string): void {
+  if (root !== currentRoot) {
+    currentRoot = root;
+    rootsEl.querySelectorAll("button").forEach((b, i) =>
+      b.setAttribute("aria-pressed", ROOTS[i] === root ? "true" : "false"));
+    syncUrl();
+    buildPage();
+  }
+  revealScale(slug);
+}
+
 function initSettings(): void {
   const btn = byId<HTMLButtonElement>("settingsbtn");
   const panel = byId<HTMLElement>("settingspanel");
   const tempoEl = byId<HTMLInputElement>("tempo");
   const tempoVal = byId<HTMLElement>("tempoval");
   const descendEl = byId<HTMLInputElement>("descend");
+  const droneEl = byId<HTMLInputElement>("drone");
 
   const setOpen = (open: boolean) => {
     panel.hidden = !open;
@@ -316,6 +441,10 @@ function initSettings(): void {
     descend = descendEl.checked;
     buildPage();
   });
+  // drone is playback-only, so no rebuild; it applies from the next Play
+  droneEl.addEventListener("change", () => {
+    drone = droneEl.checked;
+  });
 }
 
 searchEl.addEventListener("input", () => {
@@ -326,6 +455,7 @@ initSettings();
 initThemePicker(byId<HTMLElement>("themepick"), params.get("theme"));
 buildRootPicker();
 buildPage();
+if (location.hash) revealScale(location.hash.slice(1));
 initOffline(byId<HTMLElement>("offline"));
 syncThemeColor();
 // notation colors are baked into the SVGs at render time, so redraw on theme change

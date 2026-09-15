@@ -70,6 +70,8 @@ export interface PlaybackOptions {
   loop?: boolean;
   /** Master gain 0..1. Default 1. */
   volume?: number;
+  /** MIDI notes sustained underneath the whole pass (e.g. a tonic drone). */
+  drone?: number[];
 }
 
 export interface CardOptions {

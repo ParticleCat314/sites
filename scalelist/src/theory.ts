@@ -115,6 +115,83 @@ export function intervalPattern(notes: NoteName[]): string {
   return steps.join("–");
 }
 
+export interface DiatonicChord {
+  /** Roman numeral with quality case/marks, e.g. "ii", "♭III", "vii°". */
+  roman: string;
+  /** Chord symbol, e.g. "Dm7". */
+  symbol: string;
+  /** Spelled chord tones, e.g. ["D", "F", "A", "C"]. */
+  notes: NoteName[];
+  /** MIDI numbers for playback, voiced upward from octave 4. */
+  midis: number[];
+}
+
+const TRIADS: Record<string, string> = {
+  "4,7": "", "3,7": "m", "3,6": "°", "4,8": "+",
+};
+const SEVENTHS: Record<string, string> = {
+  "4,7,11": "maj7", "4,7,10": "7", "3,7,10": "m7", "3,7,11": "m(maj7)",
+  "3,6,10": "m7♭5", "3,6,9": "°7", "4,8,11": "maj7♯5", "4,8,10": "7♯5",
+  "4,6,10": "7♭5", "4,6,11": "maj7♭5",
+};
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"];
+
+/**
+ * Seventh chords built by stacking scale thirds on each degree. Only defined
+ * for 7-note scales with one note per letter; falls back to the plain triad
+ * when the seventh combination has no standard name, and skips degrees whose
+ * triad is unnameable (rare, e.g. one degree of the double harmonic scale).
+ */
+export function diatonicChords(
+  /** Canonical C spelling — supplies the degree alterations for the numerals. */
+  canonical: NoteName[],
+  /** Transposed spelling — supplies the chord names and pitches. */
+  notes: NoteName[]
+): DiatonicChord[] | null {
+  if (notes.length !== 7) return null;
+  if (new Set(notes.map((n) => n[0])).size !== 7) return null;
+  const seq = midiSequence(notes); // 8 entries; extend by octaves for stacking
+  const midiAt = (j: number) => seq[j % 7]! + 12 * Math.floor(j / 7);
+  const chords: DiatonicChord[] = [];
+  notes.forEach((_, degree) => {
+    const toneIndices = [degree, degree + 2, degree + 4, degree + 6];
+    const midis = toneIndices.map(midiAt);
+    const rel = midis.slice(1).map((m) => (m - midis[0]!) % 12).join(",");
+    const [third = 0, fifth = 0] = midis.slice(1).map((m) => (m - midis[0]!) % 12);
+    const triadKey = `${third},${fifth}`;
+    const seventhName = SEVENTHS[rel];
+    const triadName = TRIADS[triadKey];
+    if (seventhName === undefined && triadName === undefined) return;
+    const chordNotes = toneIndices.map((j) => notes[j % 7]!);
+    const useSeventh = seventhName !== undefined;
+    const accidentalMark = parseNote(canonical[degree]!)
+      .accidental.replace(/#/g, "♯").replace(/b/g, "♭");
+    const minorish = third === 3;
+    let roman = accidentalMark + (minorish ? ROMAN[degree]!.toLowerCase() : ROMAN[degree]!);
+    if (fifth === 6) roman += "°";
+    else if (fifth === 8) roman += "+";
+    chords.push({
+      roman,
+      symbol: prettyNote(notes[degree]!) + (useSeventh ? seventhName! : triadName!),
+      notes: useSeventh ? chordNotes : chordNotes.slice(0, 3),
+      midis: useSeventh ? midis : midis.slice(0, 3),
+    });
+  });
+  return chords.length ? chords : null;
+}
+
+/** Bitmask of the scale's pitch classes (bit n = pitch class n). */
+export function pitchClassMask(notes: NoteName[]): number {
+  let mask = 0;
+  for (const n of notes) mask |= 1 << parseNote(n).pitchClass;
+  return mask;
+}
+
+/** `mask` transposed up by `k` semitones. */
+export function rotateMask(mask: number, k: number): number {
+  return ((mask << k) | (mask >>> (12 - k))) & 0xfff;
+}
+
 /**
  * MIDI numbers for one ascending pass through the scale plus the closing
  * tonic, starting at octave 4. The octave bumps whenever the letter wraps

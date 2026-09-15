@@ -80,6 +80,12 @@ export class MusicCard {
     this.engine?.setTempo(tempo);
   }
 
+  /** MIDI notes sustained under the next play(); [] disables the drone. */
+  setDrone(drone: number[]): void {
+    this.options = { ...this.options, playback: { ...this.options.playback, drone } };
+    this.engine?.setDrone(drone);
+  }
+
   get isPlaying(): boolean {
     return this.engine?.isPlaying ?? false;
   }
