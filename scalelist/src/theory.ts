@@ -55,16 +55,39 @@ export function transpose(notes: NoteName[], root: NoteName): NoteName[] {
   });
 }
 
-/** "Bbb" -> "B𝄫", "F#" -> "F♯" … for display. */
+/** "Bbb" -> "B𝄫", "F#" -> "F♯" … for display. Handles any accidental count. */
 export function prettyNote(note: NoteName): string {
   return (
     note[0]! +
     note.slice(1)
-      .replace(/##/, "𝄪")
-      .replace(/bb/, "𝄫")
-      .replace(/#/, "♯")
-      .replace(/b/, "♭")
+      .replace(/##/g, "𝄪")
+      .replace(/bb/g, "𝄫")
+      .replace(/#/g, "♯")
+      .replace(/b/g, "♭")
   );
+}
+
+/** The fifteen standard major key signatures, from 7 sharps to 7 flats. */
+const MAJOR_KEY_ROOTS = [
+  "C", "G", "D", "A", "E", "B", "F#", "C#",
+  "F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb",
+];
+const C_MAJOR: NoteName[] = ["C", "D", "E", "F", "G", "A", "B"];
+let majorKeySpellings: Map<string, string> | undefined;
+
+/**
+ * The major key whose scale is exactly this 7-note spelling (in any rotation),
+ * or null. Lets diatonic modes render with a key signature instead of
+ * per-note accidentals.
+ */
+export function majorKeyOf(notes: NoteName[]): string | null {
+  if (notes.length !== 7) return null;
+  if (!majorKeySpellings) {
+    majorKeySpellings = new Map(
+      MAJOR_KEY_ROOTS.map((root) => [[...transpose(C_MAJOR, root)].sort().join(" "), root])
+    );
+  }
+  return majorKeySpellings.get([...notes].sort().join(" ")) ?? null;
 }
 
 /** Degree formula relative to major, e.g. "1 2 ♭3 4 5 ♭6 ♭7". Uses the canonical C spelling. */

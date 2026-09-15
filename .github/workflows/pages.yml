@@ -38,7 +38,7 @@ jobs:
           cp index.html _site/
           cd scalelist
           cp -r index.html styles.css fonts.css manifest.webmanifest sw.js \
-                c-scale-compendium.html dist fonts icons ../_site/scalelist/
+                dist fonts icons ../_site/scalelist/
 
       - uses: actions/upload-pages-artifact@v3
         with:

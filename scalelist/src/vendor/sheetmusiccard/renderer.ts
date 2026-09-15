@@ -69,16 +69,35 @@ export function fontsLoaded(): Promise<void> {
   return fontsPromise;
 }
 
+const SHARP_ORDER = ["f", "c", "g", "d", "a", "e", "b"];
+const FLAT_ORDER = ["b", "e", "a", "d", "g", "c", "f"];
+const SHARP_KEYS = ["C", "G", "D", "A", "E", "B", "F#", "C#"];
+const FLAT_KEYS = ["C", "F", "Bb", "Eb", "Ab", "Db", "Gb", "Cb"];
+
+/** Letter -> accidental put in force (for every octave) by a key signature. */
+function keySignatureBaseline(keySignature?: string): Map<string, string> {
+  const baseline = new Map<string, string>();
+  if (!keySignature) return baseline;
+  const sharps = SHARP_KEYS.indexOf(keySignature);
+  const flats = FLAT_KEYS.indexOf(keySignature);
+  if (sharps > 0) SHARP_ORDER.slice(0, sharps).forEach((l) => baseline.set(l, "#"));
+  else if (flats > 0) FLAT_ORDER.slice(0, flats).forEach((l) => baseline.set(l, "b"));
+  return baseline;
+}
+
 /**
  * Which accidental glyph (if any) each key of each note should carry.
  * Accidentals apply for the rest of the measure to their letter+octave, so
  * glyphs already in force are skipped and naturals are inserted to cancel an
- * earlier accidental on the same staff position. An explicit "n" in a key
- * always renders. Rests get an empty list.
+ * earlier accidental on the same staff position. A key signature puts its
+ * accidentals in force for every octave of the affected letters. An explicit
+ * "n" in a key always renders. Rests get an empty list.
  */
 export function accidentalGlyphs(
-  notes: ScoreObject["notes"]
+  notes: ScoreObject["notes"],
+  keySignature?: string
 ): (string | null)[][] {
+  const baseline = keySignatureBaseline(keySignature);
   const inForce = new Map<string, string>();
   return notes.map((note) => {
     if (note.rest) return [];
@@ -88,7 +107,7 @@ export function accidentalGlyphs(
       const [, letter, accidental = "", octave] = match;
       const slot = `${letter!.toLowerCase()}/${octave}`;
       const wanted = accidental === "n" ? "" : accidental.toLowerCase();
-      const current = inForce.get(slot) ?? "";
+      const current = inForce.get(slot) ?? baseline.get(letter!.toLowerCase()) ?? "";
       if (accidental !== "n" && wanted === current) return null;
       inForce.set(slot, wanted);
       return wanted === "" ? "n" : wanted;
@@ -107,7 +126,7 @@ export function renderScore(
   const renderer = new Renderer(host, Renderer.Backends.SVG);
   const context = renderer.getContext();
 
-  const glyphPlan = accidentalGlyphs(score.notes);
+  const glyphPlan = accidentalGlyphs(score.notes, score.keySignature);
   const staveNotes = score.notes.map((note, noteIndex) => {
     const duration = note.duration + (note.rest ? "r" : "");
     const keys = note.rest ? REST_KEYS[clef] ?? ["b/4"] : note.keys;

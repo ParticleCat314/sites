@@ -3,7 +3,7 @@ import { degreeFormula, intervalPattern, parseNote, prettyNote, transpose } from
 import { renderStave } from "./notation";
 import type { MusicCard } from "./vendor/sheetmusiccard/index";
 import { buildKeyboard } from "./keyboard";
-import { initThemePicker } from "./themes";
+import { defaultThemeId, initThemePicker } from "./themes";
 import { initOffline, syncThemeColor } from "./offline";
 
 function byId<T extends HTMLElement>(id: string): T {
@@ -19,10 +19,28 @@ const tonicName = byId<HTMLElement>("tonicName");
 const searchEl = byId<HTMLInputElement>("search");
 const noResult = byId<HTMLElement>("noresult");
 
-let currentRoot = "C";
+const params = new URLSearchParams(location.search);
+let currentRoot = ROOTS.includes(params.get("root") ?? "") ? params.get("root")! : "C";
+searchEl.value = params.get("q") ?? "";
+
+/** Playback settings, adjustable from the settings panel. */
+let tempo = 200;
+let descend = false;
 
 /** The card currently playing, so starting one scale stops the previous. */
 let playingCard: MusicCard | null = null;
+
+/** Root, theme and search live in the URL so views are shareable. */
+function syncUrl(): void {
+  const p = new URLSearchParams();
+  if (currentRoot !== "C") p.set("root", currentRoot);
+  const theme = document.documentElement.dataset.theme;
+  if (theme && theme !== defaultThemeId()) p.set("theme", theme);
+  const q = searchEl.value.trim();
+  if (q) p.set("q", q);
+  const query = p.toString();
+  history.replaceState(null, "", query ? `?${query}` : location.pathname);
+}
 
 function buildRootPicker(): void {
   for (const root of ROOTS) {
@@ -35,18 +53,42 @@ function buildRootPicker(): void {
       currentRoot = root;
       rootsEl.querySelectorAll("button").forEach((b) =>
         b.setAttribute("aria-pressed", b === btn ? "true" : "false"));
+      syncUrl();
       buildPage();
     });
     rootsEl.appendChild(btn);
   }
 }
 
+/**
+ * Staves are expensive (80 VexFlow renders), so each card only draws its
+ * notation when it approaches the viewport. Pressing Play forces the draw.
+ */
+const staveRenderers = new WeakMap<Element, () => void>();
+const staveObserver = new IntersectionObserver(
+  (entries) => {
+    for (const entry of entries) {
+      if (entry.isIntersecting) staveRenderers.get(entry.target)?.();
+    }
+  },
+  { rootMargin: "600px 0px" }
+);
+
 function buildCard(scale: Scale, categoryName: string, rootPc: number): HTMLElement {
   const notes = transpose(scale.notes, currentRoot);
 
   const card = document.createElement("article");
   card.className = "card";
-  card.dataset.search = `${scale.name} ${scale.alias} ${categoryName}`.toLowerCase();
+  const degrees = degreeFormula(scale.notes);
+  card.dataset.search = [
+    scale.name,
+    scale.alias,
+    categoryName,
+    notes.join(" "),
+    notes.map(prettyNote).join(" "),
+    degrees,
+    degrees.replace(/♯/g, "#").replace(/♭/g, "b"),
+  ].join(" ").toLowerCase();
 
   const head = document.createElement("div");
   head.className = "head";
@@ -84,6 +126,7 @@ function buildCard(scale: Scale, categoryName: string, rootPc: number): HTMLElem
 
   const staveWrap = document.createElement("div");
   staveWrap.className = "stavewrap";
+  staveWrap.style.minHeight = "140px";
   card.appendChild(staveWrap);
 
   const meta = document.createElement("div");
@@ -103,26 +146,41 @@ function buildCard(scale: Scale, categoryName: string, rootPc: number): HTMLElem
     kv.append(label + " ", b);
     meta.appendChild(kv);
   };
-  addKv("Degrees", degreeFormula(scale.notes));
+  addKv("Degrees", degrees);
   addKv("Steps (st)", intervalPattern(scale.notes));
   addKv("Notes", notes.map(prettyNote).join(" "));
   card.appendChild(meta);
 
   card.appendChild(buildKeyboard(notes.map((n) => parseNote(n).pitchClass), rootPc));
 
-  const musicCard = renderStave(staveWrap, notes, currentRoot, () => {
-    playBtn.textContent = "▶ Play";
-    if (playingCard === musicCard) playingCard = null;
-  });
+  let musicCard: MusicCard | null = null;
+  const ensureStave = (): MusicCard => {
+    if (!musicCard) {
+      staveObserver.unobserve(staveWrap);
+      musicCard = renderStave(staveWrap, notes, currentRoot, {
+        descend,
+        onEnd: () => {
+          playBtn.textContent = "▶ Play";
+          if (playingCard === musicCard) playingCard = null;
+        },
+      });
+    }
+    return musicCard;
+  };
+  staveRenderers.set(staveWrap, ensureStave);
+  staveObserver.observe(staveWrap);
+
   playBtn.addEventListener("click", () => {
-    if (musicCard.isPlaying) {
-      musicCard.stop();
+    const mc = ensureStave();
+    if (mc.isPlaying) {
+      mc.stop();
       return;
     }
     playingCard?.stop();
-    playingCard = musicCard;
+    playingCard = mc;
+    mc.setTempo(tempo);
     playBtn.textContent = "◼ Stop";
-    void musicCard.play();
+    void mc.play();
   });
 
   return card;
@@ -146,6 +204,7 @@ function setOpen(section: HTMLDetailsElement, open: boolean): void {
 function buildPage(): void {
   playingCard?.stop();
   playingCard = null;
+  staveObserver.disconnect();
   main.textContent = "";
   chipRow.textContent = "";
   tonicName.textContent = prettyNote(currentRoot);
@@ -225,8 +284,46 @@ function applyFilter(): void {
   noResult.style.display = visibleTotal ? "none" : "block";
 }
 
-searchEl.addEventListener("input", applyFilter);
-initThemePicker(byId<HTMLElement>("themepick"));
+function initSettings(): void {
+  const btn = byId<HTMLButtonElement>("settingsbtn");
+  const panel = byId<HTMLElement>("settingspanel");
+  const tempoEl = byId<HTMLInputElement>("tempo");
+  const tempoVal = byId<HTMLElement>("tempoval");
+  const descendEl = byId<HTMLInputElement>("descend");
+
+  const setOpen = (open: boolean) => {
+    panel.hidden = !open;
+    btn.setAttribute("aria-expanded", String(open));
+  };
+  btn.addEventListener("click", () => setOpen(Boolean(panel.hidden)));
+  document.addEventListener("click", (event) => {
+    if (panel.hidden) return;
+    const target = event.target as Node;
+    if (!panel.contains(target) && !btn.contains(target)) setOpen(false);
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !panel.hidden) {
+      setOpen(false);
+      btn.focus();
+    }
+  });
+
+  tempoEl.addEventListener("input", () => {
+    tempo = Number(tempoEl.value);
+    tempoVal.textContent = tempoEl.value;
+  });
+  descendEl.addEventListener("change", () => {
+    descend = descendEl.checked;
+    buildPage();
+  });
+}
+
+searchEl.addEventListener("input", () => {
+  applyFilter();
+  syncUrl();
+});
+initSettings();
+initThemePicker(byId<HTMLElement>("themepick"), params.get("theme"));
 buildRootPicker();
 buildPage();
 initOffline(byId<HTMLElement>("offline"));
@@ -235,4 +332,5 @@ syncThemeColor();
 document.addEventListener("themechange", () => {
   buildPage();
   syncThemeColor();
+  syncUrl();
 });

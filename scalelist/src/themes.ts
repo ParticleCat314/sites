@@ -21,6 +21,11 @@ export const THEMES: Theme[] = [
 
 const STORAGE_KEY = "scale-compendium-theme";
 
+/** First-visit default follows the OS light/dark preference. */
+export function defaultThemeId(): string {
+  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "midnight" : "paper";
+}
+
 export function applyTheme(id: string): void {
   const changed = document.documentElement.dataset.theme !== id;
   document.documentElement.dataset.theme = id;
@@ -32,14 +37,16 @@ export function applyTheme(id: string): void {
   if (changed) document.dispatchEvent(new CustomEvent("themechange"));
 }
 
-export function initThemePicker(container: HTMLElement): void {
+/** `preferred` (e.g. from the URL) wins over the saved choice when valid. */
+export function initThemePicker(container: HTMLElement, preferred?: string | null): void {
   let saved: string | null = null;
   try {
     saved = localStorage.getItem(STORAGE_KEY);
   } catch {
     saved = null;
   }
-  const initial = THEMES.some((t) => t.id === saved) ? saved! : THEMES[0]!.id;
+  const valid = (id: string | null | undefined) => THEMES.some((t) => t.id === id);
+  const initial = valid(preferred) ? preferred! : valid(saved) ? saved! : defaultThemeId();
 
   const label = document.createElement("span");
   label.className = "lbl";

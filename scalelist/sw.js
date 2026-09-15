@@ -7,7 +7,7 @@
  * offline afterwards.
  */
 
-const VERSION = "v2";
+const VERSION = "v3";
 const SHELL_CACHE = `scale-compendium-shell-${VERSION}`;
 const SAMPLE_CACHE = "scale-compendium-samples";
 

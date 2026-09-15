@@ -74,6 +74,12 @@ export class MusicCard {
     this.engine?.stop();
   }
 
+  /** Change playback tempo; takes effect from the next play(). */
+  setTempo(tempo: number): void {
+    this.options = { ...this.options, playback: { ...this.options.playback, tempo } };
+    this.engine?.setTempo(tempo);
+  }
+
   get isPlaying(): boolean {
     return this.engine?.isPlaying ?? false;
   }

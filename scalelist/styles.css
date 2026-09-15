@@ -297,6 +297,36 @@ header p.sub {
 }
 #theme:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px }
 
+/* ---------- settings: gear button in the top corner with a small panel ---------- */
+
+.settings { position: absolute; top: 16px; right: 16px; z-index: 30 }
+#settingsbtn {
+  width: 38px; height: 38px; border-radius: 50%;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink-dim);
+  cursor: pointer; display: grid; place-items: center;
+  -webkit-tap-highlight-color: transparent;
+}
+#settingsbtn:hover { color: var(--ink) }
+#settingsbtn[aria-expanded="true"] { color: var(--ink); border-color: var(--ink-dim) }
+#settingsbtn:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px }
+#settingspanel {
+  position: absolute; top: 46px; right: 0; width: 240px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  padding: 14px 16px; display: flex; flex-direction: column; gap: 14px;
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--ink) 14%, transparent);
+}
+#settingspanel[hidden] { display: none }
+.setting { display: flex; align-items: center; gap: 10px }
+.setting .lbl { flex: 0 0 auto }
+.setting.themepick select { flex: 1; min-width: 0 }
+#tempo { flex: 1; min-width: 0; accent-color: var(--focus) }
+.tempoval {
+  font-size: 0.8rem; color: var(--ink-dim); min-width: 2.4em; text-align: right;
+  font-family: "Spline Sans Mono", ui-monospace, Menlo, monospace;
+}
+.setting.check { justify-content: space-between; cursor: pointer }
+#descend { accent-color: var(--focus); width: 17px; height: 17px; cursor: pointer }
+
 /* ---------- category chips ---------- */
 
 .chiprow {
@@ -462,11 +492,11 @@ footer {
     background: linear-gradient(var(--paper) 92%, transparent);
   }
   #search { flex: 1 1 150px; width: auto; min-width: 0; font-size: 16px; padding: 10px 12px }
-  #theme { font-size: 16px; padding: 10px; max-width: 42vw }
-  .themepick { flex: 0 0 auto }
-  .themepick .lbl { display: none }
+  #theme { font-size: 16px; padding: 10px }
+  .settings { top: 12px; right: 12px }
+  #settingspanel { width: min(260px, calc(100vw - 24px)) }
 
-  /* search and theme share the first row; the roots strip takes the second */
+  /* search takes the first row; the roots strip takes the second */
   .rootpick { width: 100%; gap: 0; order: 3 }
   .rootpick .lbl { display: none }
   .roots {

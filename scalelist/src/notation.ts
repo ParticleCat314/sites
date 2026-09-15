@@ -1,5 +1,5 @@
 import { MusicCard, type Theme } from "./vendor/sheetmusiccard/index";
-import { LETTERS, parseNote, type NoteName } from "./theory";
+import { LETTERS, majorKeyOf, parseNote, type NoteName } from "./theory";
 
 interface VexKey {
   /** VexFlow key string, e.g. "eb/4". */
@@ -85,21 +85,34 @@ function applyPitchColors(container: HTMLElement, pitchClasses: number[]): void 
 /** ~0.3 s per quarter note, matching the app's original playback pacing. */
 const TEMPO_BPM = 200;
 
+export interface StaveOptions {
+  /** Mirror the ascent back down after the top tonic. */
+  descend?: boolean;
+  onEnd?: () => void;
+}
+
 /**
- * Render one ascending pass of the scale as quarter notes on a treble stave,
- * playable through the card's sampled piano with note highlighting.
+ * Render one pass of the scale as quarter notes on a treble stave, playable
+ * through the card's sampled piano with note highlighting. Scales that are a
+ * rotation of a major scale get a key signature instead of inline accidentals.
  */
 export function renderStave(
   container: HTMLElement,
   notes: NoteName[],
   root: NoteName,
-  onEnd?: () => void,
+  { descend, onEnd }: StaveOptions = {},
 ): MusicCard {
-  const keys = vexKeys(notes, root);
-  const width = Math.max(360, 60 + keys.length * 46);
+  let keys = vexKeys(notes, root);
+  if (descend) keys = keys.concat(keys.slice(0, -1).reverse());
+  const keySignature = majorKeyOf(notes) ?? undefined;
+  const width = Math.max(360, 60 + keys.length * 46 + (keySignature ? 44 : 0));
 
   const card = new MusicCard(container, {
-    score: { notes: keys.map((k) => ({ keys: [k.key], duration: "q" })), clef: "treble" },
+    score: {
+      notes: keys.map((k) => ({ keys: [k.key], duration: "q" })),
+      clef: "treble",
+      keySignature,
+    },
     theme: cardTheme(),
     width,
     playback: { tempo: TEMPO_BPM },
@@ -108,6 +121,7 @@ export function renderStave(
 
   // scale down instead of overflowing on narrow screens
   void card.ready.then(() => {
+    container.style.minHeight = "";
     const rootEl = container.querySelector<HTMLElement>(".sheetmusiccard");
     const svg = container.querySelector("svg");
     if (!rootEl || !svg) return;
@@ -120,7 +134,7 @@ export function renderStave(
     svg.style.height = "auto";
 
     if (document.documentElement.dataset.theme === "scriabin") {
-      const pitchClasses = [...notes, root].map((n) => parseNote(n).pitchClass);
+      const pitchClasses = keys.map((k) => parseNote(k.letter + k.accidental).pitchClass);
       applyPitchColors(container, pitchClasses);
     }
   });
