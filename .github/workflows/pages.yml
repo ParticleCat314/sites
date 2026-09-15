@@ -27,6 +27,7 @@ jobs:
           cache-dependency-path: |
             scalelist/package-lock.json
             shader-editor/package-lock.json
+            isokeyboard/package-lock.json
 
       - name: Build scalelist
         working-directory: scalelist
@@ -40,6 +41,12 @@ jobs:
           npm ci
           npm run build
 
+      - name: Build isokeyboard
+        working-directory: isokeyboard
+        run: |
+          npm ci
+          npm test
+
       - name: Assemble site
         run: |
           mkdir -p _site/scalelist
@@ -51,6 +58,8 @@ jobs:
           cp -r shader-editor/dist _site/shader-editor
           cp -r fluid _site/fluid
           cp -r giraffeplot _site/giraffeplot
+          mkdir -p _site/isokeyboard
+          cp -r isokeyboard/index.html isokeyboard/styles.css isokeyboard/dist _site/isokeyboard/
 
       - uses: actions/upload-pages-artifact@v3
         with:

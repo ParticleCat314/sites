@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hexatone — Isomorphic Keyboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@400;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles.css">
+<script type="module" src="./dist/main.js"></script>
+</head>
+<body>
+<header>
+  <h1>HEXATONE <span>· isomorphic keyboard</span></h1>
+  <div class="controls" id="controls">
+    <div class="group">
+      <label for="tuningSel">Tuning</label>
+      <select id="tuningSel"></select>
+    </div>
+    <div class="group">
+      <label for="layoutSel">Layout</label>
+      <select id="layoutSel"></select>
+    </div>
+    <div class="group">
+      <label for="scaleSel">Scale</label>
+      <select id="scaleSel"></select>
+      <label for="rootSel">on</label>
+      <select id="rootSel"></select>
+    </div>
+    <div class="group" id="mosGroup" hidden>
+      <label for="mosGenSel">Generator</label>
+      <select id="mosGenSel"></select>
+      <select id="mosNotesSel" aria-label="Notes in the MOS scale"></select>
+      <select id="mosModeSel" aria-label="Mode of the MOS scale"></select>
+    </div>
+    <div class="group">
+      <label for="voiceSel">Voice</label>
+      <select id="voiceSel">
+        <option value="piano">Piano</option>
+        <option value="warm">Warm</option>
+        <option value="glass">Glass</option>
+        <option value="pure">Pure</option>
+      </select>
+    </div>
+    <div class="group">
+      <span class="groupTag" id="octTag">Octave</span>
+      <button class="ctl" id="octDown" aria-label="Octave down">−</button>
+      <span id="octLabel">0</span>
+      <button class="ctl" id="octUp" aria-label="Octave up">+</button>
+    </div>
+    <div class="group">
+      <span class="groupTag">View</span>
+      <button class="ctl" id="panBtn" aria-pressed="false">Pan</button>
+      <button class="ctl" id="zoomOut" aria-label="Zoom out">−</button>
+      <span id="zoomLabel">100%</span>
+      <button class="ctl" id="zoomIn" aria-label="Zoom in">+</button>
+      <button class="ctl" id="resetView">Reset</button>
+    </div>
+    <div class="group">
+      <button class="ctl" id="sustainBtn" aria-pressed="false" title="Hold Space, or click to latch">Sustain</button>
+    </div>
+    <div class="group">
+      <label for="vol">Vol</label>
+      <input type="range" id="vol" min="0" max="1" step="0.01" value="0.7" aria-label="Volume">
+    </div>
+    <div class="group">
+      <button class="ctl" id="captureBtn" aria-pressed="false">⌨ Capture</button>
+      <button class="ctl" id="shareBtn" title="Copy a link to this exact setup">Link</button>
+      <button class="ctl" id="settingsBtn">⚙ Settings</button>
+    </div>
+  </div>
+</header>
+
+<div id="stage" tabindex="-1">
+  <svg id="board" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hex keyboard"></svg>
+</div>
+
+<footer>
+  <div id="boardInfo" aria-live="polite"></div>
+  <div id="readout" aria-live="polite"></div>
+  <div id="hints">Drag to glide · wheel or pinch to zoom · hold Space for sustain · pan with two fingers, middle drag or the Pan button · ⌨ Capture gives every key to the instrument (Esc leaves)</div>
+</footer>
+
+<!-- ---------- The settings dialog ---------- -->
+<div id="modal" hidden>
+  <div id="modalPanel" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modalHead">
+      <h2 id="settingsTitle">SETTINGS</h2>
+      <button class="ctl" id="closeSettings" aria-label="Close settings">✕</button>
+    </div>
+
+    <section>
+      <h3>Tuning</h3>
+      <div class="setRow">
+        <label for="edoIn">Equal divisions</label>
+        <input type="number" id="edoIn" min="2" max="96" step="1">
+        <label for="periodIn" style="width:auto">of</label>
+        <input type="number" id="periodIn" min="1" max="4000" step="0.001"> ¢
+        <span class="hint" style="margin:0">1200¢ is an octave; 1901.955¢ is the Bohlen–Pierce tritave.</span>
+      </div>
+      <div class="setRow">
+        <label for="scalaIn">Import Scala file</label>
+        <input type="file" id="scalaIn" accept=".scl,text/plain">
+        <span class="hint" style="margin:0">A <b>.scl</b> file replaces the tuning with its exact degrees.</span>
+      </div>
+      <details id="degreeDetails">
+        <summary>Degree cents — nudge any degree of this tuning</summary>
+        <div id="degreeEditor"></div>
+      </details>
+      <p class="hint" id="tuningNote"></p>
+      <p class="hint" id="tuningError" role="alert"></p>
+      <div class="setRow">
+        <label for="tuneIn">Reference pitch A4</label>
+        <input type="number" id="tuneIn" min="380" max="500" step="0.1"> Hz
+      </div>
+      <div class="setRow">
+        <label for="centerRegSel">Centre note</label>
+        <select id="centerRegSel" aria-label="Centre octave"></select>
+        <select id="centerDegSel" aria-label="Centre degree"></select>
+        <span class="hint" style="margin:0">Octave (or period) and degree at the middle of the grid.</span>
+      </div>
+      <p class="hint">
+        Scales, layout vectors and note names are all derived from the tuning: a fifth stays
+        the best fifth the tuning offers, and names come from the chain of fifths, falling
+        back to ups-and-downs (<b>C↑</b>) for degrees no accidental can reach. Tunings that do
+        not repeat at the octave number their degrees instead.
+      </p>
+    </section>
+
+    <section>
+      <h3>Scale</h3>
+      <div class="setRow">
+        <label for="rootFollowsIn">Root note</label>
+        <input type="checkbox" id="rootFollowsIn">
+        <span class="hint" style="margin:0">
+          Follow the centre note, so moving the centre moves the scale, the root highlight
+          and everything measured from it. Uncheck to set the root independently.
+        </span>
+      </div>
+      <div class="setRow">
+        <label for="outScaleSel">Out-of-scale keys</label>
+        <select id="outScaleSel">
+          <option value="silent">Greyed out and silent</option>
+          <option value="quiet">Greyed out but playable</option>
+        </select>
+        <span class="hint" style="margin:0">Pick the scale, its root, and MOS generator in the header bar.</span>
+      </div>
+    </section>
+
+    <section>
+      <h3>Appearance</h3>
+      <div class="setRow">
+        <label for="labelSel">Key labels</label>
+        <select id="labelSel">
+          <option value="names">Note names</option>
+          <option value="degrees">Degree numbers</option>
+          <option value="cents">Cents from root</option>
+          <option value="ratios">Just ratios</option>
+          <option value="hz">Frequency (Hz)</option>
+          <option value="off">None</option>
+        </select>
+      </div>
+      <div class="setRow">
+        <label for="dimDupIn">Duplicate keys</label>
+        <input type="checkbox" id="dimDupIn">
+        <span class="hint" style="margin:0">
+          An isomorphic grid repeats every note. Grey the copies outside the main area:
+          the pointer skips them, since the note is already on screen, but the computer
+          keys that land on them still play.
+        </span>
+      </div>
+      <div class="setRow">
+        <label for="dupModeSel">Repeated bands play</label>
+        <select id="dupModeSel">
+          <option value="repeat">The same note again</option>
+          <option value="octave">An octave higher or lower — widens the range</option>
+          <option value="fill">The notes this layout skips</option>
+        </select>
+      </div>
+      <p class="hint" id="reallocNote"></p>
+      <div class="setRow">
+        <label for="jiLimitSel">Just-ratio limit</label>
+        <select id="jiLimitSel"></select>
+        <span class="hint" style="margin:0">Which ratios the labels and the readout may name.</span>
+      </div>
+      <div class="setRow">
+        <label for="glowIn">Glow intensity</label>
+        <input type="range" id="glowIn" min="0" max="1.5" step="0.05">
+      </div>
+    </section>
+
+    <section>
+      <h3>MIDI keyboard</h3>
+      <div class="setRow">
+        <label for="midiConnectBtn">Connection</label>
+        <button class="ctl" id="midiConnectBtn">Connect MIDI</button>
+        <span class="hint" style="margin:0" id="midiStatus"></span>
+      </div>
+      <div class="setRow">
+        <label for="midiModeSel">Notes map to</label>
+        <select id="midiModeSel">
+          <option value="linear">One key, one step</option>
+          <option value="pitch">Nearest pitch (12-TET)</option>
+          <option value="scale">Successive scale degrees</option>
+        </select>
+        <span class="hint" style="margin:0">Middle C always plays the centre of the grid.</span>
+      </div>
+      <div class="setRow">
+        <label for="midiVelocityIn">Velocity</label>
+        <input type="checkbox" id="midiVelocityIn">
+        <label for="midiAutoIn" style="width:auto">Connect on load</label>
+        <input type="checkbox" id="midiAutoIn">
+      </div>
+      <p class="hint">
+        A MIDI controller plays alongside the pointer and the computer keyboard, and the
+        sustain pedal works. A second <b>computer</b> keyboard cannot be told apart from the
+        first: browsers merge all of them into one stream and give no device identity.
+      </p>
+    </section>
+
+    <section>
+      <h3>Keyboard mapping</h3>
+      <div class="setRow">
+        <label for="sustainModeSel">Space bar</label>
+        <select id="sustainModeSel">
+          <option value="hold">Hold for sustain, like a pedal</option>
+          <option value="toggle">Tap to latch sustain on and off</option>
+        </select>
+      </div>
+      <p class="hint">
+        Keys are matched by <b>physical position</b> (KeyboardEvent.code), so the default
+        rows already work on QWERTY, QWERTZ, AZERTY, Dvorak and Colemak hardware.
+        The labels below show what each physical key produces on <b>your</b> layout once
+        you press it. To remap: click a cell, then press the key you want there.
+        Backspace clears a cell, Esc cancels. Each row is offset by the layout's row
+        interval; cells ascend left to right by its column interval.
+        The outer columns and the function row only reach the instrument while
+        <b>⌨ Capture</b> is on — otherwise Tab, Enter and F-keys belong to the browser.
+        <b>Space</b> is reserved for sustain, so mapping it here will not play a note.
+      </p>
+      <div id="mapEditor"></div>
+      <p class="hint" id="mapSummary"></p>
+      <div id="captureHint"></div>
+      <div class="setRow" style="margin-top:12px">
+        <button class="ctl" id="mapReset">Reset mapping to default</button>
+        <span class="hint" style="margin:0" id="storeNote"></span>
+      </div>
+    </section>
+  </div>
+</div>
+</body>
+</html>
