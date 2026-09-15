@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+<title>GLSL Shader Editor</title>
+
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg0:      #0d0f14;
+  --bg1:      #13161e;
+  --bg2:      #1a1e28;
+  --bg3:      #222736;
+  --border:   #2a2f3d;
+  --accent:   #5c8af7;
+  --accent2:  #7c5cf7;
+  --err:      #e06c75;
+  --warn:     #e5c07b;
+  --ok:       #98c379;
+  --text:     #abb2bf;
+  --text-dim: #5c6370;
+  --preview:  #000000;
+  --hl:       rgba(255,255,255,0.03);
+  --sel:      rgba(92,138,247,0.22);
+  --divider-w: 5px;
+  --toolbar-h: 42px;
+  --statusbar-h: 28px;
+}
+
+html, body {
+  height: 100%;
+  height: 100dvh;
+  background: var(--bg0);
+  color: var(--text);
+  font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  font-size: 13px;
+  overflow: hidden;
+  user-select: none;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────── */
+#toolbar {
+  height: var(--toolbar-h);
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  flex-shrink: 0;
+}
+
+#toolbar .logo {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  margin-right: 4px;
+}
+
+.sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+
+.btn {
+  height: 26px;
+  padding: 0 10px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--bg2); border-color: var(--accent); color: #fff; }
+.btn.active { border-color: var(--accent); color: var(--accent); }
+.btn.recording { border-color: var(--err); color: var(--err); animation: rec-pulse 1.2s ease-in-out infinite; }
+@keyframes rec-pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+.btn svg { flex-shrink: 0; }
+
+.pill {
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+}
+.pill.ok  { background: rgba(152,195,121,0.15); color: var(--ok); }
+.pill.err { background: rgba(224,108,117,0.15); color: var(--err); }
+
+#uniform-display {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  font-size: 10px;
+  color: var(--text-dim);
+  font-family: inherit;
+}
+.uni-val { color: var(--text); }
+
+/* ── Main layout ─────────────────────────────────────────── */
+#main {
+  display: flex;
+  height: calc(100vh - var(--toolbar-h));
+  height: calc(100dvh - var(--toolbar-h));
+  overflow: hidden;
+}
+
+/* Swapped layout: preview first, editor second */
+#main.swapped { flex-direction: row-reverse; }
+
+/* ── Editor pane ─────────────────────────────────────────── */
+#editor-pane {
+  display: flex;
+  flex-direction: column;
+  width: 50%;
+  min-width: 200px;
+  background: var(--bg1);
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+#editor-wrap {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Pass tabs ───────────────────────────────────────────── */
+#pass-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  height: 30px;
+  padding: 0 6px;
+  background: var(--bg0);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+#pass-tabs::-webkit-scrollbar { display: none; }
+
+.pass-tab {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s, border-color 0.15s;
+}
+.pass-tab:hover { color: var(--text); }
+.pass-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+.pass-tab.has-error { color: var(--err); }
+.pass-tab.has-error.active { border-bottom-color: var(--err); }
+
+.pass-close {
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.45;
+  cursor: pointer;
+  font-size: 10px;
+  line-height: 1;
+  padding: 2px;
+  font-family: inherit;
+}
+.pass-close:hover { opacity: 1; color: var(--err); }
+
+.pass-add {
+  align-self: center;
+  margin-left: 4px;
+  padding: 0 8px;
+  height: 20px;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+.pass-add:hover { color: var(--accent); border-color: var(--accent); }
+
+.cm-editor {
+  height: 100%;
+  font-size: 13px;
+}
+.cm-scroller { overflow: auto !important; }
+
+/* CodeMirror custom overrides */
+.cm-editor .cm-content { padding: 8px 0; }
+.cm-editor.cm-focused { outline: none; }
+.cm-editor .cm-cursor { border-left-color: var(--accent) !important; }
+.cm-editor .cm-activeLine { background: var(--hl) !important; }
+.cm-editor .cm-activeLineGutter { background: var(--hl) !important; }
+.cm-editor .cm-gutters {
+  background: var(--bg1) !important;
+  border-right: 1px solid var(--border) !important;
+  color: var(--text-dim) !important;
+}
+.cm-editor .cm-lineNumbers .cm-gutterElement { min-width: 36px; padding: 0 6px 0 4px; }
+.cm-editor .cm-selectionBackground { background: var(--sel) !important; }
+.cm-editor .cm-matchingBracket { background: var(--sel); outline: none; }
+
+/* vim mode indicator */
+.cm-vim-panel {
+  background: var(--bg2) !important;
+  border-top: 1px solid var(--border) !important;
+  color: var(--text) !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
+  padding: 2px 8px !important;
+}
+
+/* ── Error log ───────────────────────────────────────────── */
+#error-log {
+  max-height: 140px;
+  overflow-y: auto;
+  background: var(--bg0);
+  border-top: 1px solid var(--border);
+  padding: 6px 10px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  white-space: pre-wrap;
+  font-family: inherit;
+}
+#error-log.has-errors { color: var(--err); }
+#error-log:empty { display: none; }
+#error-log::-webkit-scrollbar { width: 4px; }
+#error-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── Divider ─────────────────────────────────────────────── */
+#divider {
+  width: var(--divider-w);
+  flex-shrink: 0;
+  background: var(--border);
+  cursor: col-resize;
+  position: relative;
+  transition: background 0.15s;
+  z-index: 10;
+}
+#divider:hover, #divider.dragging { background: var(--accent); }
+#divider { touch-action: none; }
+/* widen touch hit area without changing visual width */
+#divider::after {
+  content: '';
+  position: absolute;
+  inset: 0 -6px;
+}
+
+/* ── Preview pane ────────────────────────────────────────── */
+#preview-pane {
+  flex: 1;
+  min-width: 100px;
+  background: var(--preview);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+#canvas-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+#glcanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+#overlay-error {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.7);
+  color: var(--err);
+  font-size: 13px;
+  padding: 20px;
+  text-align: center;
+}
+#overlay-error.visible { display: flex; }
+
+/* ── Status bar ──────────────────────────────────────────── */
+#statusbar {
+  height: var(--statusbar-h);
+  background: var(--bg1);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+#statusbar span { display: flex; align-items: center; gap: 4px; }
+#fps-display { margin-left: auto; }
+#res-display {}
+
+/* ── Texture strip ───────────────────────────────────────── */
+#texture-strip {
+  height: 56px;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+#texture-strip::-webkit-scrollbar { height: 3px; }
+#texture-strip::-webkit-scrollbar-thumb { background: var(--border); }
+
+.tex-slot {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+  cursor: pointer;
+  position: relative;
+  background: var(--bg3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: border-color 0.15s;
+}
+.tex-slot:hover { border-color: var(--accent); }
+.tex-slot.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.tex-slot img { width: 100%; height: 100%; object-fit: cover; display: none; }
+.tex-slot img.loaded { display: block; }
+.tex-slot .label {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,0.7);
+  font-size: 9px;
+  text-align: center;
+  padding: 1px 0;
+  color: var(--text-dim);
+}
+.tex-slot .plus { font-size: 16px; color: var(--text-dim); }
+.tex-slot:hover .plus { color: var(--accent); }
+.tex-slot.cube-mode .label { color: var(--accent); }
+
+/* Channel wired to a buffer instead of an image */
+.tex-slot.buf-mode {
+  background: var(--bg0);
+  border-style: dashed;
+  border-color: var(--accent2);
+}
+.tex-slot.buf-mode .plus { font-size: 14px; font-weight: 600; color: var(--accent2); }
+.tex-slot.buf-mode .label { color: var(--accent2); }
+
+input[type="file"] { display: none; }
+
+/* ── Context menu ────────────────────────────────────────── */
+#ctx-menu {
+  display: none;
+  position: fixed;
+  z-index: 200;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 0;
+  min-width: 140px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  user-select: none;
+}
+#ctx-menu.open { display: block; }
+.ctx-item {
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--text);
+}
+.ctx-item:hover { background: var(--bg3); color: #fff; }
+.ctx-item.ctx-active { color: var(--accent); }
+.ctx-item.ctx-danger:hover { color: var(--err); }
+.ctx-sep { height: 1px; background: var(--border); margin: 4px 0; }
+
+/* ── Cube modal ──────────────────────────────────────────── */
+#cube-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.6);
+}
+#cube-modal.open { display: flex; }
+.cube-modal-inner {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  width: 280px;
+}
+.cube-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+}
+#cube-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 6px;
+  font-family: inherit;
+}
+#cube-modal-close:hover { color: var(--text); }
+.cube-modal-hint {
+  font-size: 10px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.cube-modal-hint code {
+  color: var(--ok);
+  font-family: inherit;
+}
+#cube-face-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.cube-face-slot {
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg3);
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: border-color 0.15s;
+}
+.cube-face-slot:hover { border-color: var(--accent); }
+.cube-face-slot img { width: 100%; height: 100%; object-fit: cover; display: none; }
+.cube-face-slot img.loaded { display: block; }
+.cube-face-slot .face-label {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(0,0,0,0.7);
+  font-size: 10px;
+  text-align: center;
+  padding: 2px 0;
+  color: var(--text-dim);
+}
+.cube-face-slot .plus { font-size: 16px; color: var(--text-dim); }
+.cube-face-slot:hover .plus { color: var(--accent); }
+
+/* ── Options panel ───────────────────────────────────────── */
+#btn-options { margin-left: 8px; }
+#uniform-display + #btn-options { margin-left: 8px; }
+
+#options-panel {
+  display: none;
+  position: fixed;
+  top: calc(var(--toolbar-h) + 6px);
+  right: 10px;
+  z-index: 300;
+  width: 264px;
+  max-width: calc(100vw - 20px);
+  max-height: calc(100dvh - var(--toolbar-h) - 20px);
+  overflow-y: auto;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.45);
+  padding: 10px 12px 12px;
+}
+#options-panel.open { display: block; }
+
+.opt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+#options-close {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 6px;
+  font-family: inherit;
+}
+#options-close:hover { color: var(--text); }
+
+.opt-section { margin-bottom: 14px; }
+.opt-section:last-child { margin-bottom: 0; }
+.opt-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.opt-label .opt-val { color: var(--accent); letter-spacing: 0; text-transform: none; font-size: 11px; }
+.opt-hint { font-size: 10px; color: var(--text-dim); line-height: 1.5; margin-top: 5px; }
+
+.opt-row { display: flex; gap: 6px; }
+.opt-row .btn { flex: 1; justify-content: center; }
+
+input[type="number"] {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  background: var(--bg0);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 12px;
+  accent-color: var(--accent);
+}
+input[type="number"]:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+#opt-theme-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.theme-swatch {
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 5px 6px;
+  background: var(--bg3);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-family: inherit;
+  text-align: left;
+  transition: border-color 0.15s;
+}
+.theme-swatch:hover { border-color: var(--accent); }
+.theme-swatch.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.theme-swatch .tname { font-size: 10px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.theme-swatch .dots { display: flex; gap: 3px; }
+.theme-swatch .dot { width: 9px; height: 9px; border-radius: 2px; flex-shrink: 0; }
+
+/* ── Mobile layout ───────────────────────────────────────── */
+@media (max-width: 768px) {
+  #toolbar {
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  #toolbar::-webkit-scrollbar { display: none; }
+  #uniform-display { display: none; }
+  #btn-options { margin-left: auto; }
+
+  .btn { height: 32px; padding: 0 12px; }
+
+  #main { flex-direction: column; }
+  #main.swapped { flex-direction: column-reverse; }
+
+  #editor-pane {
+    width: 100% !important;   /* override inline width set by divider drag */
+    min-width: 0;
+    height: 45%;
+    min-height: 120px;
+  }
+
+  #divider {
+    width: 100%;
+    height: var(--divider-w);
+    cursor: row-resize;
+  }
+  #divider::after { inset: -6px 0; }
+
+  #preview-pane { min-width: 0; min-height: 100px; }
+
+  #error-log { max-height: 90px; }
+
+  /* 16px stops iOS zooming on editor focus */
+  .cm-editor { font-size: 16px; }
+
+  .tex-slot { width: 44px; height: 44px; }
+  #texture-strip { height: 60px; }
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #3a3f52; }
+</style>
+</head>
+<body>
+
+<div id="toolbar">
+  <span class="logo">GLSL</span>
+  <div class="sep"></div>
+  <button class="btn" id="btn-compile" title="Compile (Ctrl+Enter)">
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor"><polygon points="2,1 11,6 2,11"/></svg>
+    Compile
+  </button>
+  <button class="btn active" id="btn-autocompile" title="Toggle auto-compile">Auto</button>
+  <button class="btn" id="btn-pause" title="Pause/Resume">Pause</button>
+  <button class="btn" id="btn-reset" title="Reset time">Reset</button>
+  <div class="sep"></div>
+  <button class="btn" id="btn-fullscreen" title="Fullscreen preview">
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 4V1h3M8 1h3v3M11 8v3H8M4 11H1V8"/></svg>
+    Fullscreen
+  </button>
+  <div class="sep"></div>
+  <button class="btn" id="btn-export" title="Export shader code as .glsl">
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 1v7M3 5l3 3 3-3M1 9v2h10V9"/></svg>
+    Export
+  </button>
+  <button class="btn" id="btn-record" title="Record canvas as video">
+    <svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor"><circle cx="5" cy="5" r="4.5"/></svg>
+    Record
+  </button>
+  <span id="compile-status" class="pill ok">OK</span>
+  <div id="uniform-display">
+    <span>iTime: <span class="uni-val" id="u-time">0.000</span></span>
+    <span>iFrame: <span class="uni-val" id="u-frame">0</span></span>
+    <span>iMouse: <span class="uni-val" id="u-mouse">0, 0</span></span>
+  </div>
+  <button class="btn" id="btn-options" title="Options">
+    <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+      <circle cx="8" cy="8" r="2.2"/>
+      <path d="M8 1.2v1.8M8 13v1.8M1.2 8h1.8M13 8h1.8M3.2 3.2l1.3 1.3M11.5 11.5l1.3 1.3M12.8 3.2l-1.3 1.3M4.5 11.5l-1.3 1.3"/>
+    </svg>
+    Options
+  </button>
+</div>
+
+<div id="options-panel">
+  <div class="opt-header">
+    <span>Options</span>
+    <button id="options-close" title="Close">✕</button>
+  </div>
+
+  <div class="opt-section">
+    <div class="opt-label">Resolution scale <span class="opt-val" id="opt-res-val">100%</span></div>
+    <input type="number" id="opt-res" min="0.01" max="1" step="0.05" value="1">
+    <div class="opt-hint">Multiplier from 0 to 1. Scales the render framebuffer only — canvas keeps its on-screen size. Lower values help struggling devices.</div>
+  </div>
+
+  <div class="opt-section">
+    <div class="opt-label">Layout</div>
+    <div class="opt-row">
+      <button class="btn" id="opt-layout-normal">Editor 1st</button>
+      <button class="btn" id="opt-layout-swap">Preview 1st</button>
+    </div>
+    <div class="opt-hint">Swaps editor and preview panes (left/right on desktop, top/bottom when stacked).</div>
+  </div>
+
+  <div class="opt-section">
+    <div class="opt-label">Editor</div>
+    <div class="opt-row">
+      <button class="btn" id="opt-vim">Vim mode</button>
+    </div>
+  </div>
+
+  <div class="opt-section">
+    <div class="opt-label">Theme</div>
+    <div id="opt-theme-grid"></div>
+  </div>
+
+  <div class="opt-section">
+    <div class="opt-row">
+      <button class="btn" id="opt-reset">Reset to defaults</button>
+    </div>
+  </div>
+</div>
+
+<div id="main">
+  <div id="editor-pane">
+    <div id="pass-tabs"></div>
+    <div id="editor-wrap"></div>
+    <div id="error-log"></div>
+  </div>
+
+  <div id="divider"></div>
+
+  <div id="preview-pane">
+    <div id="canvas-wrap">
+      <canvas id="glcanvas"></canvas>
+      <div id="overlay-error"></div>
+    </div>
+    <div id="texture-strip">
+      <span id="strip-label" style="font-size:11px;color:var(--text-dim);margin-right:4px;white-space:nowrap">Image:</span>
+      <!-- Slots filled by JS -->
+    </div>
+    <div id="statusbar">
+      <span id="fps-display">0 fps</span>
+      <span id="res-display">0 × 0</span>
+      <span id="mode-display">WebGL2</span>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="file-input" accept="image/*">
+
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>

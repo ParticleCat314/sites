@@ -24,10 +24,18 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: scalelist/package-lock.json
+          cache-dependency-path: |
+            scalelist/package-lock.json
+            shader-editor/package-lock.json
 
       - name: Build scalelist
         working-directory: scalelist
+        run: |
+          npm ci
+          npm run build
+
+      - name: Build shader-editor
+        working-directory: shader-editor
         run: |
           npm ci
           npm run build
@@ -39,6 +47,9 @@ jobs:
           cd scalelist
           cp -r index.html styles.css fonts.css manifest.webmanifest sw.js \
                 dist fonts icons ../_site/scalelist/
+          cd ..
+          cp -r shader-editor/dist _site/shader-editor
+          cp -r fluid _site/fluid
 
       - uses: actions/upload-pages-artifact@v3
         with:
